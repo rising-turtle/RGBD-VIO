@@ -1,0 +1,95 @@
+%YAML:1.0
+
+#camera calibration 
+model_type: PINHOLE
+camera_name: camera
+image_width: 424 #640
+image_height: 240 #480
+distortion_parameters:
+    k1: 0.
+    k2: 0.
+    p1: 0.
+    p2: 0.
+projection_parameters: 
+    #  615.426, 625.456, 318.837, 240.594
+    fx: 308.653 # 309.235 # 617.306
+    fy: 308.857 # 309.381 # 617.714
+    cx: 215.122 # 213.547 # 326.245
+    cy: 119.987 # 118.772 # 239.974
+
+#### feature tracking #### 
+sub_region_x: 8 #12 8
+sub_region_y: 8 # 8
+max_n_feature_subregion: 4 #2
+boundary_x: 25
+boundary_y: 30
+min_dist_between_features: 15 # 10 20
+harris_threshold: 0.00000001 #1e-8
+show_feature_tracking_result: 0 #1
+
+#### feature tracker ####
+max_cnt: 150
+min_dist: 15
+freq: 10
+show_track: 1
+estimate_td: 0
+td: 0.0
+save_image: 0
+load_previous_pose_graph: 0
+rolling_shutter: 0
+
+#### depth handler ####
+cloud_ds_rate: 2 # 2
+cloud_skip_rate: 1
+cloud_max_depth: 3.
+
+#### max depth range ####
+max_depth_range: 2.4
+
+#### normal gravity ####
+norm_g: 1.
+
+#### vio ####
+imu_topic: "/imu0"
+image_topic: "/cam0/color" # "/cam0/image_raw"
+dpt_img_topic: "/cam0/depth" # depth msg 
+output_path: "dvio_result.log"         # vins outputs will be wrttento vins_folder_path + output_path
+
+estimate_extrinsic: 0 
+ex_calib_result_path: "ex_calib_result.yaml"  # If you choose 1 or 2, the extrinsic calibration result will be written vins_folder_path + ex_calib_result_path.                        
+extrinsicRotation: !!opencv-matrix
+    rows: 3
+    cols: 3
+    dt: d
+    data: [1, 0, 0, 
+        0, 1, 0, 
+        0, 0, 1]
+        #Translation from camera frame to imu frame, imu^T_cam
+extrinsicTranslation: !!opencv-matrix
+    rows: 3
+    cols: 1
+    dt: d
+    # data: [-0.02,-0.06, 0.01]
+    # data: [0.063, -0.001, 0.018]
+    data: [-0.01, 0, 0.025]
+
+F_threshold: 2.0 # 2.0 # 3.0 # 2.0 1.0        # ransac threshold (pixel)
+fisheye: 0              # if using fisheye, trun on it. A circle mask will be loaded to remove edge noisy points
+
+#optimization parameters
+max_solver_time: 0.04  # 0.04 max solver itration time (ms), to guarantee real time
+max_num_iterations: 8   # 8 max solver itrations, to guarantee real time
+keyframe_parallax: 10. # 3. 10.0 # keyframe selection threshold (pixel)
+
+        #imu parameters       The more accurate parameters you provide, the better performance
+# TODO: figure out these parameters
+acc_n: 0.014           # accelerometer measurement noise standard deviation. #0.001372
+gyr_n: 0.0006          # gyroscope measurement noise standard deviation.     #0.000061087
+acc_w: 0.000277          # accelerometer bias random work noise standard deviation.  #0.000027719
+gyr_w: 0.00003428        # gyroscope bias random work noise standard deviation.     #0.000003428
+g_norm: 9.81007     # gravity magnitude
+
+#loop closure parameters
+loop_closure: 0 # 1   #if you want to use loop closure to minimize the drift, set loop_closure true and give your brief pattern file path and vocabulary file path accordingly;
+
+
