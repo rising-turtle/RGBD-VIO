@@ -12,6 +12,7 @@ Eigen::Vector3d G{0.0, 0.0, 9.8};
 double nG;
 
 double MAX_DPT_RANGE;
+double DPT_VALID_RANGE = 2.4;
 double BIAS_ACC_THRESHOLD;
 double BIAS_GYR_THRESHOLD;
 double SOLVER_TIME;
@@ -111,8 +112,9 @@ void readParameters(ros::NodeHandle &n)
     ROS_DEBUG("SOLVER_TIME: %lf PIX_SIGMA = %lf ACC_N = %lf ACC_W = %lf GYR_N = %lf GYR_W = %lf G.z = %lf", SOLVER_TIME, PIX_SIGMA, ACC_N, ACC_W, GYR_N, GYR_W, G.z());
 
     MAX_DPT_RANGE = fsSettings["max_depth_range"]; 
+    DPT_VALID_RANGE = fsSettings["valid_depth_range"]; // within this range, depth are very accurate
     nG = fsSettings["norm_g"]; 
-    ROS_DEBUG("MAX_DEPTH_RANGE: %lf normal g: %lf", MAX_DPT_RANGE, nG);
+    ROS_DEBUG("MAX_DEPTH_RANGE: %lf DPT_VALID_RANGE: %lf normal g: %lf", MAX_DPT_RANGE, DPT_VALID_RANGE, nG);
     cv::FileNode node = fsSettings["projection_parameters"];
     FX = static_cast<double>(node["fx"]);
     FY = static_cast<double>(node["fy"]);

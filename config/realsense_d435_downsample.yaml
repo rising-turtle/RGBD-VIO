@@ -45,6 +45,7 @@ cloud_max_depth: 3.
 
 #### max depth range ####
 max_depth_range: 2.4
+valid_depth_range: 2.4 # RMS about 20mm 
 
 #### normal gravity ####
 norm_g: 1.

@@ -51,6 +51,7 @@ extrinsicTranslation: !!opencv-matrix
 
 #### max depth range ####
 max_depth_range: 7.0
+valid_depth_range: 3.0 # RMS about 10mm 
 
 #### normal gravity ####
 norm_g: -9.8

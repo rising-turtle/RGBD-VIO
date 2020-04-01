@@ -16,7 +16,7 @@ const int NUM_OF_CAM = 1; //2; // test stereo type representation 1;
 const int NUM_OF_FEAT = 1000;
 const double LOOP_INFO_VALUE = 50.0;
 const double RIG_LEN = 0.1; // stereo rig len , about 0.1 meters
-const double DPT_VALID_RANGE = 2.4; // set it as 2.2 meters 
+extern double DPT_VALID_RANGE; // = 2.4; // set it as 2.2 meters 
 extern double MAX_DPT_RANGE;  // maximum depth range 
 //#define DEPTH_PRIOR
 //#define GT
