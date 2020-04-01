@@ -98,7 +98,8 @@ void readParameters(ros::NodeHandle &n)
 
     fsSettings["output_path"] >> VINS_RESULT_PATH;
     // VINS_RESULT_PATH = VINS_FOLDER_PATH + VINS_RESULT_PATH;
-    VINS_RESULT_PATH = VINS_RESULT_PATH + "/dvio.csv"; 
+    VINS_RESULT_PATH = VINS_RESULT_PATH + "/rgbd_vio.csv"; 
+    ROS_DEBUG("VINS_RESULT_PATH: %s", VINS_RESULT_PATH.c_str()); 
     std::ofstream foutC(VINS_RESULT_PATH, std::ios::out);
     foutC.close();
 
@@ -196,7 +197,7 @@ void readParameters(ros::NodeHandle &n)
 
     CAM_NAMES = config_file;
 
-    INIT_DEPTH =  5.0; // 7.0; // 15.0; // 5.0;
+    INIT_DEPTH =  15.0; // 7.0; // 15.0; // 5.0;
     fsSettings.release();
     once = true;
     return ;

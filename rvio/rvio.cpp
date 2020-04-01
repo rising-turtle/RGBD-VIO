@@ -969,7 +969,7 @@ void RVIO::solveOdometry()
                 }
 
                 if(shift == it_per_id.depth_shift) {
-                    if(dpt_j > 0){
+                    if(dpt_j > 0 && dpt_j <= DPT_VALID_RANGE){
                         // if(dpt_j <= 2.2){
                         //     problem.SetParameterBlockConstant(para_Feature[feature_index]); 
                         //}else{

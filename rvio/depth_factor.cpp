@@ -15,7 +15,7 @@
 SingleInvDepthFactor::SingleInvDepthFactor(double inv_dpt_i):
 inv_depth_i(inv_dpt_i)
 {
-    sqrt_info = (FOCAL_LENGTH*1./1.5);
+    sqrt_info = (FOCAL_LENGTH*1./1.5); // *0.1
 }
 
 void SingleInvDepthFactor::setSigma(double sig_sigma)
@@ -49,6 +49,7 @@ pts_j(_pts_j)
 {
     // ProjectionDepthFactor::sqrt_info(2,2) *= RIG_LEN; 
     sqrt_info = Eigen::Matrix3d::Identity()*(FOCAL_LENGTH*1./1.5); 
+    // sqrt_info(2,2) *= 0.5; 
 }
 
 void ProjectionDepthFactor::setSqrtCov(Eigen::Matrix3d& C)
