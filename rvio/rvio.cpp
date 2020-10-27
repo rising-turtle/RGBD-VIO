@@ -170,7 +170,7 @@ void RVIO::associateDepthSimple(map<int, vector<pair<int, Eigen::Matrix<double, 
         float vi = it->second[0].second(4); // vi
 
         float d = (float)dpt.at<unsigned short>(std::round(vi), std::round(ui)) * 0.001;
-        if(0 && d>= 0.3 && d <= MAX_DPT_RANGE) {
+        if(d>= 0.3 && d <= MAX_DPT_RANGE) {
             it->second[0].second(2) = d;
         }else{
             it->second[0].second(2) = 0.; // make it an invalid depth value 
@@ -320,10 +320,10 @@ void RVIO::processImage_Init(const map<int, vector<pair<int, Eigen::Matrix<doubl
                 showStatus();
 
                 // f_manager.triangulateSimple(frame_count, Ps, Rs, tic, ric);
-                // f_manager.triangulateWithDepth(Ps, tic, ric);
+                f_manager.triangulateWithDepth(Ps, tic, ric);
                 f_manager.triangulate(Ps, Rs, tic, ric); 
-                // solveOdometry();
-                solveMono(); 
+                solveOdometry();
+                // solveMono(); 
                 slideWindow(); 
                 f_manager.removeFailures(); 
                 last_R = Rs[WN]; 
@@ -343,10 +343,10 @@ void RVIO::processImage_Init(const map<int, vector<pair<int, Eigen::Matrix<doubl
         // only debug initialization 
 
         // f_manager.triangulateSimple(frame_count, Ps, Rs, tic, ric);
-        // f_manager.triangulateWithDepth(Ps, tic, ric);
+        f_manager.triangulateWithDepth(Ps, tic, ric);
         f_manager.triangulate(Ps, Rs, tic, ric); 
-        // solveOdometry();
-        solveMono();
+        solveOdometry();
+        // solveMono();
 
         slideWindow(); 
         f_manager.removeFailures(); 
@@ -1187,7 +1187,7 @@ void RVIO::solveOdometry()
                 int imu_j = it_per_id.start_frame + shift; 
                 Vector3d pts_j = it_per_id.feature_per_frame[shift].pt;                
 
-                if(1 && dpt_j <= 0 ){
+                if(dpt_j <= 0 ){
                     // para_Feature[feature_index][0] = 1./it_per_id.estimated_depth; 
                     ProjectionFactor * f = new ProjectionFactor(pts_i, pts_j); 
                     // f->sqrt_info = 240 * Eigen::Matrix2d::Identity(); // 240
@@ -1221,7 +1221,7 @@ void RVIO::solveOdometry()
 
                 ProjectionFactor_Y2 * f= new ProjectionFactor_Y2(pts_i, pts_j); 
                 // SampsonFactorEssential * f = new SampsonFactorEssential(pts_i, pts_j); 
-                // problem.AddResidualBlock(f, loss_function, para_Pose[imu_i], para_Pose[imu_j], para_Ex_Pose[0]); 
+                problem.AddResidualBlock(f, loss_function, para_Pose[imu_i], para_Pose[imu_j], para_Ex_Pose[0]); 
             }
         }
     }
@@ -1322,7 +1322,8 @@ void RVIO::solveOdometry()
                         dpt_j = 1./it_per_id.feature_per_frame[imu_j].lambda; 
                     }
 
-                    if(1 && dpt_j <= 0){
+                    // TODO: figure out why marginalization with depth variables will decrease 
+                    if(1 || dpt_j <= 0){
                         // para_Feature[feature_index][0] = 1./it_per_id.estimated_depth; 
                         ProjectionFactor * f = new ProjectionFactor(pts_i, pts_j); 
 
@@ -1350,63 +1351,11 @@ void RVIO::solveOdometry()
                 }
             }else{
                 ROS_ERROR("now should not arrive here!");
-                Vector3d pts_j = it_per_id.feature_per_frame[0].pt;
-                double dpt_j = it_per_id.feature_per_frame[0].dpt; 
-                if(it_per_id.feature_per_frame[0].lambda > 0 && it_per_id.feature_per_frame[0].sig_l > 0){
-                    dpt_j = 1./it_per_id.feature_per_frame[0].lambda; 
-                }
-                if(dpt_j <= 0){
-                    ProjectionFactor * f = new ProjectionFactor(pts_i, pts_j); 
-
-                    // debug vector<int>{1} not work, since in marginalization, it splits the variables into two sets [m, n], m include those need to be marginalized
-                    // n include the rest variables, however, it assumes that n do not contain any features, only poses and one speedvelocity node, so here, need to add feature[] into 
-                    // m, change vector<int>{1} to vector<int>{1, 3} works 
-                    // ResidualBlockInfo* residual_block_info = new ResidualBlockInfo(f, loss_function, 
-                    //                                   vector<double*>{para_Pose[imu_i], para_Pose[0], para_Ex_Pose[0], para_Feature[feature_index]},
-                    //                                   vector<int>{1});
-
-                    ResidualBlockInfo* residual_block_info = new ResidualBlockInfo(f, loss_function, 
-                                                        vector<double*>{para_Pose[imu_i], para_Pose[0], para_Ex_Pose[0], para_Feature[feature_index]},
-                                                        vector<int>{1, 3});
-
-                    // for (int i = 0; i < residual_block_info->parameter_blocks.size(); ++i) {
-                        // printf(" RVIO.cpp: down parameter block %d pointer: %p \n", i, residual_block_info->parameter_blocks[i]); 
-                    // }
-                    marginalization_info->addResidualBlockInfo(residual_block_info);
-                }else{
-                    ProjectionDepthFactor * f = new ProjectionDepthFactor(pts_i, pts_j, 1./dpt_j);
-                    if(it_per_id.feature_per_frame[0].lambda > 0 && it_per_id.feature_per_frame[0].sig_l > 0){
-                        Eigen::Matrix3d C = Eigen::Matrix3d::Identity()*(1.5/FOCAL_LENGTH); 
-                        C(2,2) = it_per_id.feature_per_frame[0].sig_l; 
-                        f->setSqrtCov(C);
-                    }
-
-                    ResidualBlockInfo* residual_block_info = new ResidualBlockInfo(f, loss_function, 
-                                                            vector<double*>{para_Pose[imu_i], para_Pose[0], para_Ex_Pose[0], para_Feature[feature_index]},
-                                                            vector<int>{1, 3});
-                    marginalization_info->addResidualBlockInfo(residual_block_info);
-                }
-                
             }
 
         }else if(it_per_id.solve_flag != 2){ // feature unknown depths 
 
-            if(it_per_id.start_frame != 0) 
-                continue; // no worry 
-            int imu_i = it_per_id.start_frame; 
-            Vector3d pts_i = it_per_id.feature_per_frame[0].pt; 
-
-            for(int shift = 1; shift < it_per_id.feature_per_frame.size(); shift++){
-
-                int imu_j = imu_i + shift; 
-                Vector3d pts_j = it_per_id.feature_per_frame[shift].pt; 
-
-                ProjectionFactor_Y2 * f= new ProjectionFactor_Y2(pts_i, pts_j); 
-                ResidualBlockInfo* residual_block_info = new ResidualBlockInfo(f, loss_function, 
-                                                        vector<double*>{para_Pose[imu_i], para_Pose[imu_j], para_Ex_Pose[0]},
-                                                        vector<int>{0});
-                // marginalization_info->addResidualBlockInfo(residual_block_info);
-            }
+            // don't handle 
         }
 
         }

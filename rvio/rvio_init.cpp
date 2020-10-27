@@ -68,8 +68,8 @@ bool RVIO::initialStructure()
     Matrix3d relative_R;
     Vector3d relative_T;
     int l;
-    if (!relativePose(relative_R, relative_T, l))
-    // if(!relativePoseHybrid(relative_R, relative_T, l))
+    // if (!relativePose(relative_R, relative_T, l))
+    if(!relativePoseHybrid(relative_R, relative_T, l))
     // if(!relativePoseHybridCov(relative_R, relative_T, l))
     {
         ROS_INFO("Not enough features or parallax; Move device around");
@@ -157,8 +157,8 @@ bool RVIO::initialStructure()
         cout<<"R_pnp: "<<endl<<R_pnp<<endl;
         frame_it->second.T = T_pnp;
     }
-    if (visualInitialAlign())
-    //if(visualInitialAlignWithDepth())
+    // if (visualInitialAlign())
+    if(visualInitialAlignWithDepth())
         return true;
     else
     {
@@ -226,7 +226,7 @@ bool RVIO::visualInitialAlignWithDepth()
     }
 
       // show feature depth error 
-    double totoal_dpt_err = 0; 
+    double total_dpt_err = 0; 
     double dpt_err = 0; 
     int cnt = 0; 
 
@@ -247,12 +247,12 @@ bool RVIO::visualInitialAlignWithDepth()
             // para_angle = it_per_id.parallax_angle(Rs, RIC[0], &parallax);
             // ROS_DEBUG("parallax: %lf parallax_angle: %lf ", parallax, para_angle); 
 
-            totoal_dpt_err += SQ(dpt_err); 
+            total_dpt_err += SQ(dpt_err); 
             ++cnt; 
         }
     }
     if(cnt > 0)
-        ROS_INFO("RVIO_init.cpp: tital depth rmse: %lf ", sqrt(totoal_dpt_err/cnt));
+        ROS_INFO("RVIO_init.cpp: total depth rmse: %lf ", sqrt(total_dpt_err/cnt));
 
     Matrix3d R0 = Utility::g2R(g);
     double yaw = Utility::R2ypr(R0 * Rs[0]).x();

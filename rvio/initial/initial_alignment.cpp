@@ -343,8 +343,8 @@ bool VisualIMUAlignment(map<double, ImageFrame> &all_image_frame, Vector3d* Bgs,
 {
     solveGyroscopeBias(all_image_frame, Bgs);
 
-    if(LinearAlignment(all_image_frame, g, x))
-    // if(LinearAlignmentWithDepth(all_image_frame, g, x))
+    // if(LinearAlignment(all_image_frame, g, x))
+    if(LinearAlignmentWithDepth(all_image_frame, g, x))
         return true;
     else 
         return false;
