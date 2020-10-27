@@ -623,7 +623,9 @@ bool FeatureManager::addFeatureCheckParallaxSigma(int frame_count, const map<int
     //if (frame_count < 2 || last_track_num < 20)
     //if (frame_count < 2 || last_track_num < 20 || new_feature_num > 0.5 * last_track_num)
     if (frame_count < 2 || last_track_num < 20 || long_track_num < 40 || new_feature_num > 0.5 * last_track_num)
-        return true; // margin old 
+         return true; // margin old 
+    // if (frame_count < 2 || last_track_num < 20)
+        // return true;
 
     for (auto &it_per_id : feature)
     {
@@ -730,9 +732,9 @@ bool FeatureManager::addFeatureCheckParallax(int frame_count, const map<int, vec
     }
 
     ROS_INFO("after addFeatureCheckParallax num of feature: %d last_track_num: %d", getFeatureCount(), last_track_num);
-    //if (frame_count < 2 || last_track_num < 20)
+    if (frame_count < 2 || last_track_num < 20)
     //if (frame_count < 2 || last_track_num < 20 || new_feature_num > 0.5 * last_track_num)
-    if (frame_count < 2 || last_track_num < 20 || long_track_num < 40 || new_feature_num > 0.5 * last_track_num)
+    // if (frame_count < 2 || last_track_num < 20 || long_track_num < 40 || new_feature_num > 0.5 * last_track_num)
         return true; // margin old 
 
     for (auto &it_per_id : feature)
@@ -1348,7 +1350,7 @@ void FeatureManager::triangulate(Vector3d Ps[], Matrix3d Rs[], Vector3d tic[], M
         if (it_per_id.estimated_depth < 0.1)
         {
             it_per_id.estimated_depth = -1.; // INIT_DEPTH;
-            it_per_id.depth_shift = -1;
+            it_per_id.depth_shift = 0; //-1;
             it_per_id.dpt_type = NO_DEPTH; 
         }
         // printf("motion %d pts: %f %f %f depth: %f \n", it_per_id.feature_id, it_per_id.feature_per_frame[0].pt[0], 

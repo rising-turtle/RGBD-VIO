@@ -118,6 +118,8 @@ void RVIO::clearState()
 
     f_manager.clearState();
 
+    ProjectionFactor::sqrt_info = FOCAL_LENGTH / 1.5 * Matrix2d::Identity();
+
     // failure_occur = 0;
     initial_timestamp = 0;
     m_process.unlock(); 
@@ -168,7 +170,7 @@ void RVIO::associateDepthSimple(map<int, vector<pair<int, Eigen::Matrix<double, 
         float vi = it->second[0].second(4); // vi
 
         float d = (float)dpt.at<unsigned short>(std::round(vi), std::round(ui)) * 0.001;
-        if(d>= 0.3 && d <= MAX_DPT_RANGE) {
+        if(0 && d>= 0.3 && d <= MAX_DPT_RANGE) {
             it->second[0].second(2) = d;
         }else{
             it->second[0].second(2) = 0.; // make it an invalid depth value 
@@ -177,114 +179,6 @@ void RVIO::associateDepthSimple(map<int, vector<pair<int, Eigen::Matrix<double, 
     }
     return ; 
 }
-
-/*
-void RVIO::associateDepth(map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>>& featureFrame, cv::Mat& dpt)
-{
-    pcl::PointCloud<pcl::PointXYZI>::Ptr pc = processDepthImage(dpt); 
-
-    if(pc->points.size() <= DPT_VALID_RANGE){
-        ROS_WARN("RVIO: pc points %d, too few, no depth ", pc->points.size()); 
-        return ; 
-    }
-
-    // normalized point cloud to a wall-like pc 
-    static pcl::PointCloud<pcl::PointXYZI>::Ptr nor_pc(new pcl::PointCloud<pcl::PointXYZI>); 
-    nor_pc->points.resize(pc->points.size()); 
-    float zoom_z = 10.; 
-
-    for(int i=0; i<nor_pc->points.size(); i++){
-        pcl::PointXYZI& npt = nor_pc->points[i];
-        pcl::PointXYZI& pt = pc->points[i];
-
-        npt.x = pt.x * zoom_z / pt.z; 
-        npt.y = pt.y * zoom_z / pt.z;
-        npt.intensity = pt.z; 
-        npt.z = zoom_z; 
-    }
-
-    static boost::shared_ptr<pcl::KdTreeFLANN<pcl::PointXYZI> > kdtree(new pcl::KdTreeFLANN<pcl::PointXYZI>); 
-    kdtree->setInputCloud(nor_pc);
-
-    // x, y, z, p_u, p_v, velocity_x, velocity_y;
-    map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>>::iterator it = featureFrame.begin(); 
-    pcl::PointXYZI ips; 
-    
-    while(it != featureFrame.end()){
-
-        float nor_ui = it->second[0].second(0); 
-        float nor_vi = it->second[0].second(1); 
-        float ui = it->second[0].second(3); 
-        float vi = it->second[0].second(4);  
-
-        float d = (float)dpt.at<unsigned short>(std::round(vi), std::round(ui)) * 0.001;
-
-        if(d < 0.2) {
-            it++;
-            continue; 
-        }
-
-        ips.x = nor_ui * zoom_z; 
-        ips.y = nor_vi * zoom_z; 
-        ips.z = zoom_z;  
-
-        // for kd search 
-        std::vector<int> pointSearchInd;
-        std::vector<float> pointSearchSqrDis;
-
-        kdtree->nearestKSearch(ips, 3, pointSearchInd, pointSearchSqrDis); 
-        double minDepth, maxDepth; 
-        if(pointSearchSqrDis[0] < 0.3 && pointSearchInd.size() == 3)
-        {
-            pcl::PointXYZI depthPoint = nor_pc->points[pointSearchInd[0]];
-            double x1 = depthPoint.x * depthPoint.intensity / zoom_z;
-            double y1 = depthPoint.y * depthPoint.intensity / zoom_z;
-            double z1 = depthPoint.intensity;
-            minDepth = z1;
-            maxDepth = z1;
-
-            depthPoint = nor_pc->points[pointSearchInd[1]];
-            double x2 = depthPoint.x * depthPoint.intensity / zoom_z;
-            double y2 = depthPoint.y * depthPoint.intensity / zoom_z;
-            double z2 = depthPoint.intensity;
-            minDepth = (z2 < minDepth)? z2 : minDepth;
-            maxDepth = (z2 > maxDepth)? z2 : maxDepth;
-
-            depthPoint = nor_pc->points[pointSearchInd[2]];
-            double x3 = depthPoint.x * depthPoint.intensity / zoom_z;
-            double y3 = depthPoint.y * depthPoint.intensity / zoom_z;
-            double z3 = depthPoint.intensity;
-            minDepth = (z3 < minDepth)? z3 : minDepth;
-            maxDepth = (z3 > maxDepth)? z3 : maxDepth;
-
-            double u = nor_ui;
-            double v = nor_vi;
-
-            // intersection point between direction of OP and the Plane formed by [P1, P2, P3]
-            double s = (x1*y2*z3 - x1*y3*z2 - x2*y1*z3 + x2*y3*z1 + x3*y1*z2 - x3*y2*z1) 
-            / (x1*y2 - x2*y1 - x1*y3 + x3*y1 + x2*y3 - x3*y2 + u*y1*z2 - u*y2*z1
-                - v*x1*z2 + v*x2*z1 - u*y1*z3 + u*y3*z1 + v*x1*z3 - v*x3*z1 + u*y2*z3 
-                - u*y3*z2 - v*x2*z3 + v*x3*z2);
-
-            // check the validity of the depth measurement 
-            if(maxDepth - minDepth > 2) // lie on an edge or noisy point? 
-            {   
-                s = -1; 
-            }else if(s - maxDepth > 0.2)
-            {
-                s = maxDepth; 
-            }else if(s - minDepth < - 0.2)
-            {
-                s = minDepth; 
-            }
-            it->second[0].second(2) = s;
-        }
-
-        it++;
-
-    }
-    return ; 
-}*/
 
 void RVIO::initFirstIMUPose(vector<pair<double, Eigen::Vector3d>> &accVector)
 {
@@ -409,7 +303,7 @@ void RVIO::processImage_Init(const map<int, vector<pair<int, Eigen::Matrix<doubl
     tmp_pre_integration = new IntegrationBase{acc_0, gyr_0, Bas[frame_count], Bgs[frame_count]};
 
     if(solver_flag == INITIAL){
-        cout<<"RVIO.cpp: at frame_count: "<<frame_count<<" feature_manager has: "<<f_manager.feature.size()<<" features!"<<endl; 
+        // cout<<"RVIO.cpp: at frame_count: "<<frame_count<<" feature_manager has: "<<f_manager.feature.size()<<" features!"<<endl; 
         if(frame_count == WN){
             bool result = false; 
             if((header - initial_timestamp) > 0.1)
@@ -425,9 +319,11 @@ void RVIO::processImage_Init(const map<int, vector<pair<int, Eigen::Matrix<doubl
                 ROS_INFO("Initialization finish!");
                 showStatus();
 
-                f_manager.triangulateSimple(frame_count, Ps, Rs, tic, ric);
-                solveOdometry();
-                // solveMono(); 
+                // f_manager.triangulateSimple(frame_count, Ps, Rs, tic, ric);
+                // f_manager.triangulateWithDepth(Ps, tic, ric);
+                f_manager.triangulate(Ps, Rs, tic, ric); 
+                // solveOdometry();
+                solveMono(); 
                 slideWindow(); 
                 f_manager.removeFailures(); 
                 last_R = Rs[WN]; 
@@ -446,9 +342,11 @@ void RVIO::processImage_Init(const map<int, vector<pair<int, Eigen::Matrix<doubl
 
         // only debug initialization 
 
-        f_manager.triangulateSimple(frame_count, Ps, Rs, tic, ric);
-        solveOdometry();
-        // solveMono();
+        // f_manager.triangulateSimple(frame_count, Ps, Rs, tic, ric);
+        // f_manager.triangulateWithDepth(Ps, tic, ric);
+        f_manager.triangulate(Ps, Rs, tic, ric); 
+        // solveOdometry();
+        solveMono();
 
         slideWindow(); 
         f_manager.removeFailures(); 
@@ -573,6 +471,25 @@ void RVIO::slideWindow()
             linear_acceleration_buf[WN].clear();
             angular_velocity_buf[WN].clear();
 
+            if (true || solver_flag == INITIAL)
+            {
+                map<double, ImageFrame>::iterator it_0;
+                it_0 = all_image_frame.find(t_0);
+                delete it_0->second.pre_integration;
+                it_0->second.pre_integration = nullptr;
+
+                for (map<double, ImageFrame>::iterator it = all_image_frame.begin(); it != it_0; ++it)
+                {
+                    if (it->second.pre_integration)
+                        delete it->second.pre_integration;
+                    it->second.pre_integration = NULL;
+                }
+
+                all_image_frame.erase(all_image_frame.begin(), it_0);
+                all_image_frame.erase(t_0);
+
+            }
+
             slideWindowOld(); 
         }else{
             cout<<"RVIO.cpp: what? in slide_window margin_old frame_count = "<<frame_count<<endl;
@@ -634,6 +551,284 @@ void RVIO::slideWindowOld()
     }else
         f_manager.removeBack();
 }
+/*
+void RVIO::solveMono()
+{
+    ceres::Problem problem;
+    ceres::LossFunction *loss_function;
+    //loss_function = new ceres::HuberLoss(1.0);
+    loss_function = new ceres::CauchyLoss(1.0);
+    for (int i = 0; i < WINDOW_SIZE + 1; i++)
+    {
+        ceres::LocalParameterization *local_parameterization = new PoseLocalPrameterization();
+        problem.AddParameterBlock(para_Pose[i], SIZE_POSE, local_parameterization);
+        problem.AddParameterBlock(para_SpeedBias[i], SIZE_SPEEDBIAS);
+    }
+    for (int i = 0; i < NUM_OF_CAM; i++)
+    {
+        ceres::LocalParameterization *local_parameterization = new PoseLocalPrameterization();
+        problem.AddParameterBlock(para_Ex_Pose[i], SIZE_POSE, local_parameterization);
+        if (!ESTIMATE_EXTRINSIC)
+        {
+            ROS_DEBUG("fix extinsic param");
+            problem.SetParameterBlockConstant(para_Ex_Pose[i]);
+        }
+        else
+            ROS_DEBUG("estimate extinsic param");
+    }
+
+    TicToc t_whole, t_prepare;
+    // vector2double();
+    priorOptimize(); 
+
+    if (last_marginalization_info)
+    {
+        // construct new marginlization_factor
+        MarginalizationFactor *marginalization_factor = new MarginalizationFactor(last_marginalization_info);
+        problem.AddResidualBlock(marginalization_factor, NULL,
+                                 last_marginalization_parameter_blocks);
+    }
+
+    for (int i = 0; i < WINDOW_SIZE; i++)
+    {
+        int j = i + 1;
+        if (pre_integrations[j]->sum_dt > 10.0)
+            continue;
+        IMUFactor* imu_factor = new IMUFactor(pre_integrations[j]);
+        problem.AddResidualBlock(imu_factor, NULL, para_Pose[i], para_SpeedBias[i], para_Pose[j], para_SpeedBias[j]);
+    }
+    int f_m_cnt = 0;
+    int feature_index = -1;
+    for (auto &it_per_id : f_manager.feature)
+    {
+        it_per_id.used_num = it_per_id.feature_per_frame.size();
+        if (!(it_per_id.used_num >= MIN_USED_NUM && it_per_id.start_frame < WINDOW_SIZE - 2))
+            continue;
+
+        ++feature_index;
+
+        int imu_i = it_per_id.start_frame, imu_j = imu_i - 1;
+
+        Vector3d pts_i = it_per_id.feature_per_frame[0].pt;
+
+        for (auto &it_per_frame : it_per_id.feature_per_frame)
+        {
+            imu_j++;
+            if (imu_i == imu_j)
+            {
+                continue;
+            }
+            Vector3d pts_j = it_per_frame.pt;
+            {
+                ProjectionFactor *f = new ProjectionFactor(pts_i, pts_j);
+                ceres::ResidualBlockId fid = problem.AddResidualBlock(f, loss_function, para_Pose[imu_i], para_Pose[imu_j], para_Ex_Pose[0], para_Feature[feature_index]);
+                if(0){
+                    static ofstream ouf("rgbd_vio_debug.txt"); 
+                    vector<double*>* para = new vector<double*>;  
+                    problem.GetParameterBlocksForResidualBlock(fid, para); 
+                    vector<double> res(2); 
+                    f->Evaluate(&para[0][0], &res[0], 0); 
+                    // cout<<"estimator.cpp: residual: "<<res[0]<<" "<<res[1]<<endl;
+                    ouf << f_m_cnt<<" "<<pts_i.transpose()<<" "<<pts_j.transpose()<<" "<<para_Feature[feature_index][0]<<" "<< res[0]<<" "<<res[1]<<endl;
+                }
+            }
+            f_m_cnt++;
+        }
+    }
+
+    ROS_DEBUG("visual measurement count: %d", f_m_cnt);
+    ROS_DEBUG("prepare for ceres: %f", t_prepare.toc());
+
+    ceres::Solver::Options options;
+
+    options.linear_solver_type = ceres::DENSE_SCHUR;
+    //options.num_threads = 2;
+    options.trust_region_strategy_type = ceres::DOGLEG;
+    options.max_num_iterations = NUM_ITERATIONS;
+    //options.use_explicit_schur_complement = true;
+    options.minimizer_progress_to_stdout = true;
+    //options.use_nonmonotonic_steps = true;
+    if (marginalization_flag == MARGIN_OLD)
+        options.max_solver_time_in_seconds = SOLVER_TIME * 4.0 / 5.0;
+    else
+        options.max_solver_time_in_seconds = SOLVER_TIME;
+    TicToc t_solver;
+    ceres::Solver::Summary summary;
+    ceres::Solve(options, &problem, &summary);
+    //cout << summary.BriefReport() << endl;
+    ROS_DEBUG("Iterations : %d", static_cast<int>(summary.iterations.size()));
+    ROS_DEBUG("solver costs: %f", t_solver.toc());
+    // exit(0); 
+
+    // double2vector();
+    afterOptimize(); 
+
+    TicToc t_whole_marginalization;
+    if (marginalization_flag == MARGIN_OLD)
+    {
+        MarginalizationInfo *marginalization_info = new MarginalizationInfo();
+        // vector2double();
+        priorOptimize(); 
+
+        if (last_marginalization_info)
+        {
+            vector<int> drop_set;
+            for (int i = 0; i < static_cast<int>(last_marginalization_parameter_blocks.size()); i++)
+            {
+                if (last_marginalization_parameter_blocks[i] == para_Pose[0] ||
+                    last_marginalization_parameter_blocks[i] == para_SpeedBias[0])
+                    drop_set.push_back(i);
+            }
+            // construct new marginlization_factor
+            MarginalizationFactor *marginalization_factor = new MarginalizationFactor(last_marginalization_info);
+            ResidualBlockInfo *residual_block_info = new ResidualBlockInfo(marginalization_factor, NULL,
+                                                                           last_marginalization_parameter_blocks,
+                                                                           drop_set);
+
+            marginalization_info->addResidualBlockInfo(residual_block_info);
+        }
+
+        {
+            if (pre_integrations[1]->sum_dt < 10.0)
+            {
+                IMUFactor* imu_factor = new IMUFactor(pre_integrations[1]);
+                ResidualBlockInfo *residual_block_info = new ResidualBlockInfo(imu_factor, NULL,
+                                                                           vector<double *>{para_Pose[0], para_SpeedBias[0], para_Pose[1], para_SpeedBias[1]},
+                                                                           vector<int>{0, 1});
+                marginalization_info->addResidualBlockInfo(residual_block_info);
+            }
+        }
+
+        {
+            int feature_index = -1;
+            for (auto &it_per_id : f_manager.feature)
+            {
+                it_per_id.used_num = it_per_id.feature_per_frame.size();
+                if (!(it_per_id.used_num >= MIN_USED_NUM && it_per_id.start_frame < WINDOW_SIZE - 2))
+                    continue;
+
+                ++feature_index;
+
+                int imu_i = it_per_id.start_frame, imu_j = imu_i - 1;
+                if (imu_i != 0)
+                    continue;
+
+                Vector3d pts_i = it_per_id.feature_per_frame[0].pt;
+
+                for (auto &it_per_frame : it_per_id.feature_per_frame)
+                {
+                    imu_j++;
+                    if (imu_i == imu_j)
+                        continue;
+
+                    Vector3d pts_j = it_per_frame.pt;
+                 
+                    
+                        ProjectionFactor *f = new ProjectionFactor(pts_i, pts_j);
+                        ResidualBlockInfo *residual_block_info = new ResidualBlockInfo(f, loss_function,
+                                                                                       vector<double *>{para_Pose[imu_i], para_Pose[imu_j], para_Ex_Pose[0], para_Feature[feature_index]},
+                                                                                       vector<int>{0, 3});
+                        marginalization_info->addResidualBlockInfo(residual_block_info);
+                    
+                }
+            }
+        }
+
+        TicToc t_pre_margin;
+        marginalization_info->preMarginalize();
+        ROS_DEBUG("pre marginalization %f ms", t_pre_margin.toc());
+
+        TicToc t_margin;
+        marginalization_info->marginalize();
+        ROS_DEBUG("marginalization %f ms", t_margin.toc());
+
+        std::unordered_map<long, double *> addr_shift;
+        for (int i = 1; i <= WINDOW_SIZE; i++)
+        {
+            addr_shift[reinterpret_cast<long>(para_Pose[i])] = para_Pose[i - 1];
+            addr_shift[reinterpret_cast<long>(para_SpeedBias[i])] = para_SpeedBias[i - 1];
+        }
+        for (int i = 0; i < NUM_OF_CAM; i++)
+            addr_shift[reinterpret_cast<long>(para_Ex_Pose[i])] = para_Ex_Pose[i];
+
+        vector<double *> parameter_blocks = marginalization_info->getParameterBlocks(addr_shift);
+
+        if (last_marginalization_info)
+            delete last_marginalization_info;
+        last_marginalization_info = marginalization_info;
+        last_marginalization_parameter_blocks = parameter_blocks;
+
+    }
+    else
+    {
+        if (last_marginalization_info &&
+            std::count(std::begin(last_marginalization_parameter_blocks), std::end(last_marginalization_parameter_blocks), para_Pose[WINDOW_SIZE - 1]))
+        {
+
+            MarginalizationInfo *marginalization_info = new MarginalizationInfo();
+            // vector2double();
+            priorOptimize();
+            if (last_marginalization_info)
+            {
+                vector<int> drop_set;
+                for (int i = 0; i < static_cast<int>(last_marginalization_parameter_blocks.size()); i++)
+                {
+                    ROS_ASSERT(last_marginalization_parameter_blocks[i] != para_SpeedBias[WINDOW_SIZE - 1]);
+                    if (last_marginalization_parameter_blocks[i] == para_Pose[WINDOW_SIZE - 1])
+                        drop_set.push_back(i);
+                }
+                // construct new marginlization_factor
+                MarginalizationFactor *marginalization_factor = new MarginalizationFactor(last_marginalization_info);
+                ResidualBlockInfo *residual_block_info = new ResidualBlockInfo(marginalization_factor, NULL,
+                                                                               last_marginalization_parameter_blocks,
+                                                                               drop_set);
+
+                marginalization_info->addResidualBlockInfo(residual_block_info);
+            }
+
+            TicToc t_pre_margin;
+            ROS_DEBUG("begin marginalization");
+            marginalization_info->preMarginalize();
+            ROS_DEBUG("end pre marginalization, %f ms", t_pre_margin.toc());
+
+            TicToc t_margin;
+            ROS_DEBUG("begin marginalization");
+            marginalization_info->marginalize();
+            ROS_DEBUG("end marginalization, %f ms", t_margin.toc());
+
+            std::unordered_map<long, double *> addr_shift;
+            for (int i = 0; i <= WINDOW_SIZE; i++)
+            {
+                if (i == WINDOW_SIZE - 1)
+                    continue;
+                else if (i == WINDOW_SIZE)
+                {
+                    addr_shift[reinterpret_cast<long>(para_Pose[i])] = para_Pose[i - 1];
+                    addr_shift[reinterpret_cast<long>(para_SpeedBias[i])] = para_SpeedBias[i - 1];
+                }
+                else
+                {
+                    addr_shift[reinterpret_cast<long>(para_Pose[i])] = para_Pose[i];
+                    addr_shift[reinterpret_cast<long>(para_SpeedBias[i])] = para_SpeedBias[i];
+                }
+            }
+            for (int i = 0; i < NUM_OF_CAM; i++)
+                addr_shift[reinterpret_cast<long>(para_Ex_Pose[i])] = para_Ex_Pose[i];
+
+            vector<double *> parameter_blocks = marginalization_info->getParameterBlocks(addr_shift);
+            if (last_marginalization_info)
+                delete last_marginalization_info;
+            last_marginalization_info = marginalization_info;
+            last_marginalization_parameter_blocks = parameter_blocks;
+
+        }
+    }
+    ROS_DEBUG("whole marginalization costs: %f", t_whole_marginalization.toc());
+
+    ROS_DEBUG("whole time for ceres: %f", t_whole.toc());
+}
+*/
+
 
 void RVIO::solveMono()
 {
@@ -683,7 +878,7 @@ void RVIO::solveMono()
     for (auto &it_per_id : f_manager.feature)
     {
         it_per_id.used_num = it_per_id.feature_per_frame.size();
-        if (!(it_per_id.used_num >= 2 && it_per_id.start_frame < WN - 2))
+        if (!(it_per_id.used_num >= MIN_USED_NUM && it_per_id.start_frame < WN - 2))
             continue;
 
         if(it_per_id.estimated_depth <= 0 || it_per_id.solve_flag == 2)
@@ -771,7 +966,7 @@ void RVIO::solveMono()
             for (auto &it_per_id : f_manager.feature)
             {
                 it_per_id.used_num = it_per_id.feature_per_frame.size();
-                if (!(it_per_id.used_num >= 2 && it_per_id.start_frame < WN - 2))
+                if (!(it_per_id.used_num >= MIN_USED_NUM && it_per_id.start_frame < WN - 2))
                     continue;
 
                 if(it_per_id.estimated_depth <= 0 || it_per_id.solve_flag == 2)
@@ -877,8 +1072,8 @@ void RVIO::solveMono()
             
         }
     }
-
 }
+
 
 void RVIO::solveOdometry()
 {
@@ -982,7 +1177,7 @@ void RVIO::solveOdometry()
 
                         // TODO: add covariance info
                         if(dpt_j <= DPT_VALID_RANGE){
-                            problem.SetParameterBlockConstant(para_Feature[feature_index]); 
+                            // problem.SetParameterBlockConstant(para_Feature[feature_index]); 
                         }
                         f_m_cnt++;
                     }
@@ -992,7 +1187,7 @@ void RVIO::solveOdometry()
                 int imu_j = it_per_id.start_frame + shift; 
                 Vector3d pts_j = it_per_id.feature_per_frame[shift].pt;                
 
-                if(dpt_j <= 0 ){
+                if(1 && dpt_j <= 0 ){
                     // para_Feature[feature_index][0] = 1./it_per_id.estimated_depth; 
                     ProjectionFactor * f = new ProjectionFactor(pts_i, pts_j); 
                     // f->sqrt_info = 240 * Eigen::Matrix2d::Identity(); // 240
@@ -1026,7 +1221,7 @@ void RVIO::solveOdometry()
 
                 ProjectionFactor_Y2 * f= new ProjectionFactor_Y2(pts_i, pts_j); 
                 // SampsonFactorEssential * f = new SampsonFactorEssential(pts_i, pts_j); 
-                problem.AddResidualBlock(f, loss_function, para_Pose[imu_i], para_Pose[imu_j], para_Ex_Pose[0]); 
+                // problem.AddResidualBlock(f, loss_function, para_Pose[imu_i], para_Pose[imu_j], para_Ex_Pose[0]); 
             }
         }
     }
@@ -1127,7 +1322,7 @@ void RVIO::solveOdometry()
                         dpt_j = 1./it_per_id.feature_per_frame[imu_j].lambda; 
                     }
 
-                    if(dpt_j <= 0){
+                    if(1 && dpt_j <= 0){
                         // para_Feature[feature_index][0] = 1./it_per_id.estimated_depth; 
                         ProjectionFactor * f = new ProjectionFactor(pts_i, pts_j); 
 
@@ -1210,7 +1405,7 @@ void RVIO::solveOdometry()
                 ResidualBlockInfo* residual_block_info = new ResidualBlockInfo(f, loss_function, 
                                                         vector<double*>{para_Pose[imu_i], para_Pose[imu_j], para_Ex_Pose[0]},
                                                         vector<int>{0});
-                marginalization_info->addResidualBlockInfo(residual_block_info);
+                // marginalization_info->addResidualBlockInfo(residual_block_info);
             }
         }
 

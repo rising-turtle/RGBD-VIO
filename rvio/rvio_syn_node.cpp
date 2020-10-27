@@ -56,7 +56,7 @@ double last_imu_t = 0;
 
 sensor_msgs::Image::ConstPtr getDptImage(double timestamp)
 {
-    ROS_WARN("rvio_syn_node.cpp: try to find out dpt img at %lf", timestamp); 
+    // ROS_WARN("rvio_syn_node.cpp: try to find out dpt img at %lf", timestamp); 
     while(true){
         if(dpt_img_buf.empty())
             return NULL; 
@@ -64,11 +64,11 @@ sensor_msgs::Image::ConstPtr getDptImage(double timestamp)
         double current_time = dpt_img->header.stamp.toSec(); 
 
         if(fabs(current_time - timestamp) < 1e-3){
-            ROS_DEBUG("rvio_syn_node.cpp: found syn depth image at timestamp: %lf", current_time); 
+            // ROS_DEBUG("rvio_syn_node.cpp: found syn depth image at timestamp: %lf", current_time); 
             return dpt_img; 
         }else if(current_time < timestamp){
             dpt_img_buf.pop(); 
-            ROS_INFO("rvio_syn_node.cpp: remove older depth at timestamp: %lf", current_time);
+            // ROS_INFO("rvio_syn_node.cpp: remove older depth at timestamp: %lf", current_time);
             continue; 
         }else {
             ROS_ERROR("rvio_syn_node.cpp: what? cannot find syn depth img"); 

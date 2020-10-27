@@ -68,9 +68,9 @@ bool RVIO::initialStructure()
     Matrix3d relative_R;
     Vector3d relative_T;
     int l;
-    // if (!relativePose(relative_R, relative_T, l))
+    if (!relativePose(relative_R, relative_T, l))
     // if(!relativePoseHybrid(relative_R, relative_T, l))
-    if(!relativePoseHybridCov(relative_R, relative_T, l))
+    // if(!relativePoseHybridCov(relative_R, relative_T, l))
     {
         ROS_INFO("Not enough features or parallax; Move device around");
         return false;
@@ -157,8 +157,8 @@ bool RVIO::initialStructure()
         cout<<"R_pnp: "<<endl<<R_pnp<<endl;
         frame_it->second.T = T_pnp;
     }
-    // if (visualInitialAlign())
-    if(visualInitialAlignWithDepth())
+    if (visualInitialAlign())
+    //if(visualInitialAlignWithDepth())
         return true;
     else
     {
@@ -346,7 +346,7 @@ bool RVIO::visualInitialAlign()
         it_per_id.used_num = it_per_id.feature_per_frame.size();
         if (!(it_per_id.used_num >= 2 && it_per_id.start_frame < WINDOW_SIZE - 2))
             continue;
-        ROS_INFO("scale: %f, before depth: %f after depth: %f", s, it_per_id.estimated_depth, it_per_id.estimated_depth*s);
+        // ROS_INFO("scale: %f, before depth: %f after depth: %f", s, it_per_id.estimated_depth, it_per_id.estimated_depth*s);
         it_per_id.estimated_depth *= s;
 
         // show off the depth difference 
@@ -364,8 +364,8 @@ bool RVIO::visualInitialAlign()
             ++cnt; 
         }
     }
-    if(cnt > 0)
-        ROS_INFO("RVIO_init.cpp: tital depth rmse: %lf ", sqrt(totoal_dpt_err/cnt));
+    // if(cnt > 0)
+        // ROS_INFO("RVIO_init.cpp: tital depth rmse: %lf ", sqrt(totoal_dpt_err/cnt));
 
 
     Matrix3d R0 = Utility::g2R(g);
@@ -477,6 +477,7 @@ bool RVIO::relativePose(Matrix3d &relative_R, Vector3d &relative_T, int &l)
                 l = i;
                 ROS_DEBUG("average_parallax %f choose l %d and newest frame to triangulate the whole structure", average_parallax * 460, l);
                 ROS_INFO("estimator.cpp: corres has %d pairs", corres.size());
+                // cout<<"relative_R: "<<endl<<relative_R<<endl<<" relative_T: "<<relative_T.transpose()<<endl;
                 return true;
             }
         }

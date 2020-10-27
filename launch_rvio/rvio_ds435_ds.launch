@@ -1,4 +1,6 @@
 <launch>
+  
+  <!--remember to change the variable FOCAL_LENGTH = 230 in parameters.h/-->
 
   <arg name="config_file" default="$(find rgbd_vio)/config/realsense_d435_downsample.yaml"/>
   <arg name="vins_folder" default="$(find rgbd_vio)/result/"/>

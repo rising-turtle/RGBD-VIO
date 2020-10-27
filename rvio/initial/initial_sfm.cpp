@@ -43,7 +43,7 @@ bool GlobalSFM::solveFrameByPnP(Matrix3d &R_initial, Vector3d &P_initial, int i,
 			}
 		}
 	}
-	printf("at frame %d has observations: %d\n", i, pts_2_vector.size());
+	// printf("at frame %d has observations: %d\n", i, pts_2_vector.size());
 	if (int(pts_2_vector.size()) < 15)
 	{
 		printf("initial_sfm.cpp: for frame %d, only %d features are found \
@@ -264,12 +264,12 @@ bool GlobalSFM::construct(int frame_num, Quaterniond* q, Vector3d* T, int l,
 		}
 
 		// triangulate point based on the solve pnp result
-		triangulateTwoFramesWithDepth(i, Pose[i], frame_num - 1, Pose[frame_num - 1], sfm_f);
+		// triangulateTwoFramesWithDepth(i, Pose[i], frame_num - 1, Pose[frame_num - 1], sfm_f);
 		triangulateTwoFrames(i, Pose[i], frame_num - 1, Pose[frame_num - 1], sfm_f)	;
 	}
 	//3: triangulate l-----l+1 l+2 ... frame_num -2
 	for (int i = l + 1; i < frame_num - 1; i++){
-		triangulateTwoFramesWithDepth(l, Pose[l], i, Pose[i], sfm_f);
+		// triangulateTwoFramesWithDepth(l, Pose[l], i, Pose[i], sfm_f);
 		triangulateTwoFrames(l, Pose[l], i, Pose[i], sfm_f);
 	}
 
@@ -288,31 +288,32 @@ bool GlobalSFM::construct(int frame_num, Quaterniond* q, Vector3d* T, int l,
 		Pose[i].block<3, 3>(0, 0) = c_Rotation[i];
 		Pose[i].block<3, 1>(0, 3) = c_Translation[i];
 		//triangulate
-		triangulateTwoFramesWithDepth(i, Pose[i],  l, Pose[l], sfm_f);
+		// triangulateTwoFramesWithDepth(i, Pose[i],  l, Pose[l], sfm_f);
 		triangulateTwoFrames(i, Pose[i], l, Pose[l], sfm_f);
 	}
 	//5: triangulate all other points
-	// for (int j = 0; j < feature_num; j++)
-	// {
-	// 	if (sfm_f[j].state == true)
-	// 		continue;
-	// 	if ((int)sfm_f[j].observation.size() >= 2)
-	// 	{
-	// 		Vector2d point0, point1;
-	// 		int frame_0 = sfm_f[j].observation[0].first;
-	// 		point0 = sfm_f[j].observation[0].second;
-	// 		int frame_1 = sfm_f[j].observation.back().first;
-	// 		point1 = sfm_f[j].observation.back().second;
-	// 		Vector3d point_3d;
-	// 		triangulatePoint(Pose[frame_0], Pose[frame_1], point0, point1, point_3d);
-	// 		sfm_f[j].state = true;
-	// 		sfm_f[j].position[0] = point_3d(0);
-	// 		sfm_f[j].position[1] = point_3d(1);
-	// 		sfm_f[j].position[2] = point_3d(2);
-	// 		//cout << "trangulated : " << frame_0 << " " << frame_1 << "  3d point : "  << j << "  " << point_3d.transpose() << endl;
-	// 	}		
-	// }
+	for (int j = 0; j < feature_num; j++)
+	{
+		if (sfm_f[j].state == true)
+			continue;
+		if ((int)sfm_f[j].observation.size() >= 2)
+		{
+			Vector2d point0, point1;
+			int frame_0 = sfm_f[j].observation[0].first;
+			point0 = sfm_f[j].observation[0].second;
+			int frame_1 = sfm_f[j].observation.back().first;
+			point1 = sfm_f[j].observation.back().second;
+			Vector3d point_3d;
+			triangulatePoint(Pose[frame_0], Pose[frame_1], point0, point1, point_3d);
+			sfm_f[j].state = true;
+			sfm_f[j].position[0] = point_3d(0);
+			sfm_f[j].position[1] = point_3d(1);
+			sfm_f[j].position[2] = point_3d(2);
+			//cout << "trangulated : " << frame_0 << " " << frame_1 << "  3d point : "  << j << "  " << point_3d.transpose() << endl;
+		}		
+	}
 
+/* this is the depth version 
 	//5: triangulate all other points
 	for (int j = 0; j < feature_num; j++)
 	{
@@ -359,7 +360,7 @@ bool GlobalSFM::construct(int frame_num, Quaterniond* q, Vector3d* T, int l,
 			}
 			//cout << "trangulated : " << frame_0 << " " << frame_1 << "  3d point : "  << j << "  " << point_3d.transpose() << endl;
 		}		
-	}
+	}*/
 
 /*
 	for (int i = 0; i < frame_num; i++)
