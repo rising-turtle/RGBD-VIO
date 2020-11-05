@@ -1,19 +1,17 @@
 <launch>
-  
+
   <!--remember to change the variable FOCAL_LENGTH = 230 in parameters.h/-->
 
-  <arg name="config_file" default="$(find rgbd_vio)/config/realsense_d435_downsample.yaml"/>
-  <arg name="vins_folder" default="$(find rgbd_vio)/result/"/>
+  <arg name="config_file" default="$(find rgbd_vio)/config/ipad.yaml"/>
 
   <node pkg="rgbd_vio" type="feature_tracker_rgbd_vio" name="feature_tracker" output="screen">
     <param name="config_file" type="string" value="$(arg config_file)"/>
   </node>
- 
+
   <node pkg="rgbd_vio" type="rgbd_vio_node" name="rvio_node" output="screen">
     <param name="config_file" type="string" value="$(arg config_file)"/>
-    <param name="vins_folder" type="string" value="$(arg vins_folder)"/>
   </node>
 
   <node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d $(find rgbd_vio)/launch_rvio/rvio_demo.rviz"/>
-  
+
 </launch>
