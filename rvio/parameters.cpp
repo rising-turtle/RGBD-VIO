@@ -1,4 +1,6 @@
 #include "parameters.h"
+#include <iostream>
+#include <iomanip>
 
 double INIT_DEPTH;
 double MIN_PARALLAX;
@@ -33,7 +35,7 @@ std::string IMU_TOPIC;
 int IMAGE_ROW, IMAGE_COL;
 std::string VINS_FOLDER_PATH;
 int MAX_KEYFRAME_NUM;
-double PIX_SIGMA, FX, FY, CX, CY; 
+double PIX_SIGMA, FX, FY, CX, CY;
 
 int MAX_CNT;
 int MIN_DIST;
@@ -62,11 +64,11 @@ T readParam(ros::NodeHandle &n, std::string name)
 
 void readParameters(ros::NodeHandle &n)
 {
-    static bool once = false; 
-    if(once ) return; 
+    static bool once = false;
+    if(once ) return;
     std::string config_file("/home/davidz/work/ros/kinetic/src/demo_rgbd_new/config/downsample.yaml");
     // config_file = readParam<std::string>(n, "config_file");
-    n.param("config_file", config_file, config_file); 
+    n.param("config_file", config_file, config_file);
     cv::FileStorage fsSettings(config_file, cv::FileStorage::READ);
     if(!fsSettings.isOpened())
     {
@@ -78,7 +80,7 @@ void readParameters(ros::NodeHandle &n)
     // VINS_FOLDER_PATH = readParam<std::string>(n, "vins_folder");
     fsSettings["image_topic"] >> IMAGE_TOPIC;
     fsSettings["imu_topic"] >> IMU_TOPIC;
-    fsSettings["dpt_img_topic"] >> DPT_IMG_TOPIC; 
+    fsSettings["dpt_img_topic"] >> DPT_IMG_TOPIC;
 
     MAX_CNT = fsSettings["max_cnt"];
     MIN_DIST = fsSettings["min_dist"];
@@ -98,8 +100,10 @@ void readParameters(ros::NodeHandle &n)
 
     fsSettings["output_path"] >> VINS_RESULT_PATH;
     // VINS_RESULT_PATH = VINS_FOLDER_PATH + VINS_RESULT_PATH;
-    VINS_RESULT_PATH = VINS_RESULT_PATH + "/rgbd_vio.csv"; 
-    ROS_DEBUG("VINS_RESULT_PATH: %s", VINS_RESULT_PATH.c_str()); 
+    // create folder if not exists
+    Utility::FileSystemHelper::createDirectoryIfNotExists(VINS_RESULT_PATH.c_str());
+    VINS_RESULT_PATH = VINS_RESULT_PATH + "/rgbd_vio.csv";
+    ROS_DEBUG("VINS_RESULT_PATH: %s", VINS_RESULT_PATH.c_str());
     std::ofstream foutC(VINS_RESULT_PATH, std::ios::out);
     foutC.close();
 
@@ -112,9 +116,9 @@ void readParameters(ros::NodeHandle &n)
     PIX_SIGMA = fsSettings["F_threshold"];
     ROS_DEBUG("SOLVER_TIME: %lf PIX_SIGMA = %lf ACC_N = %lf ACC_W = %lf GYR_N = %lf GYR_W = %lf G.z = %lf", SOLVER_TIME, PIX_SIGMA, ACC_N, ACC_W, GYR_N, GYR_W, G.z());
 
-    MAX_DPT_RANGE = fsSettings["max_depth_range"]; 
+    MAX_DPT_RANGE = fsSettings["max_depth_range"];
     DPT_VALID_RANGE = fsSettings["valid_depth_range"]; // within this range, depth are very accurate
-    nG = fsSettings["norm_g"]; 
+    nG = fsSettings["norm_g"];
     ROS_DEBUG("MAX_DEPTH_RANGE: %lf DPT_VALID_RANGE: %lf normal g: %lf", MAX_DPT_RANGE, DPT_VALID_RANGE, nG);
     cv::FileNode node = fsSettings["projection_parameters"];
     FX = static_cast<double>(node["fx"]);
@@ -132,7 +136,7 @@ void readParameters(ros::NodeHandle &n)
         EX_CALIB_RESULT_PATH = VINS_FOLDER_PATH + EX_CALIB_RESULT_PATH;
 
     }
-    else 
+    else
     {
         if ( ESTIMATE_EXTRINSIC == 1){
             ROS_WARN(" Optimize extrinsic param around initial guess!");
@@ -143,13 +147,13 @@ void readParameters(ros::NodeHandle &n)
             ROS_WARN(" fix extrinsic param ");
 /*
         cv::Mat cv_R, cv_T;
-        fsSettings["body_T_cam0"] >> cv_T; 
-        Eigen::Matrix4d T; 
-        cv::cv2eigen(cv_T, T); 
+        fsSettings["body_T_cam0"] >> cv_T;
+        Eigen::Matrix4d T;
+        cv::cv2eigen(cv_T, T);
 
-        RIC.push_back(T.block<3,3>(0,0)); 
+        RIC.push_back(T.block<3,3>(0,0));
         ROS_INFO_STREAM("before normalize Extrinsic_R : " << std::endl << RIC[0]);
-        Eigen::Quaterniond Q(RIC[0]); 
+        Eigen::Quaterniond Q(RIC[0]);
         RIC[0] = Q.normalized();
         // ROS_INFO_STREAM(" Q : " << std::endl << Q.w()<<" "<<Q.x()<<" "<<Q.y()<<" "<<Q.z());
         TIC.push_back(T.block<3,1>(0,3));
@@ -157,12 +161,12 @@ void readParameters(ros::NodeHandle &n)
         ROS_INFO_STREAM("Extrinsic_T : " << std::endl << TIC[0].transpose());
 
         if(NUM_OF_CAM == 2){
-            fsSettings["body_T_cam1"] >> cv_T; 
-            cv::cv2eigen(cv_T, T); 
-            RIC.push_back(T.block<3,3>(0,0)); 
-            Eigen::Quaterniond Q(RIC[1]); 
+            fsSettings["body_T_cam1"] >> cv_T;
+            cv::cv2eigen(cv_T, T);
+            RIC.push_back(T.block<3,3>(0,0));
+            Eigen::Quaterniond Q(RIC[1]);
             RIC[1] = Q.normalized();
-            TIC.push_back(T.block<3,1>(0,3)); 
+            TIC.push_back(T.block<3,1>(0,3));
             ROS_INFO_STREAM("cam2 Extrinsic_R : " << std::endl << RIC[1]);
             ROS_INFO_STREAM("cam2 Extrinsic_T : " << std::endl << TIC[1].transpose());
         }
@@ -182,7 +186,7 @@ void readParameters(ros::NodeHandle &n)
         ROS_INFO_STREAM("Extrinsic_R : " << std::endl << RIC[0]);
         ROS_INFO_STREAM("Extrinsic_T : " << std::endl << TIC[0].transpose());
 
-    } 
+    }
 
     LOOP_CLOSURE = fsSettings["loop_closure"];
     if (LOOP_CLOSURE == 1)

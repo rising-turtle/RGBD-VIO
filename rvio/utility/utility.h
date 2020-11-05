@@ -1,5 +1,10 @@
 #pragma once
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <libgen.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <cmath>
 #include <cassert>
 #include <cstring>
@@ -110,10 +115,10 @@ class Utility
     template<typename Derived>
     static Eigen::Matrix<typename Derived::Scalar, 3, 3> yrp2R(const Eigen::MatrixBase<Derived>& yrp)
     {
-	typedef typename Derived::Scalar Scalar_t; 
+	typedef typename Derived::Scalar Scalar_t;
         Scalar_t y = yrp(0) / 180. * M_PI;
-	Scalar_t p = yrp(2) / 180. * M_PI; 
-	Scalar_t r = yrp(1) / 180. * M_PI; 
+	Scalar_t p = yrp(2) / 180. * M_PI;
+	Scalar_t r = yrp(1) / 180. * M_PI;
 
         Eigen::Matrix<Scalar_t, 3, 3> Rz;
         Rz << cos(y), -sin(y), 0,
@@ -131,17 +136,17 @@ class Utility
             0., sin(r), cos(r);
 
 
-	return Rz * Rx * Ry; 
+	return Rz * Rx * Ry;
     }
 
 
     template<typename Derived>
     static Eigen::Matrix<typename Derived::Scalar, 3, 3> rpy2R(const Eigen::MatrixBase<Derived>& rpy)
     {
-	typedef typename Derived::Scalar Scalar_t; 
+	typedef typename Derived::Scalar Scalar_t;
         Scalar_t y = rpy(2) / 180. * M_PI;
-	Scalar_t p = rpy(1) / 180. * M_PI; 
-	Scalar_t r = rpy(0) / 180. * M_PI; 
+	Scalar_t p = rpy(1) / 180. * M_PI;
+	Scalar_t r = rpy(0) / 180. * M_PI;
 
         Eigen::Matrix<Scalar_t, 3, 3> Rz;
         Rz << cos(y), -sin(y), 0,
@@ -159,7 +164,7 @@ class Utility
             0., sin(r), cos(r);
 
 
-	return Rx * Ry * Rz; 
+	return Rx * Ry * Rz;
     }
 
     static Eigen::Matrix3d g2R(const Eigen::Vector3d &g);
@@ -192,4 +197,49 @@ class Utility
         return angle_degrees +
             two_pi * std::floor((-angle_degrees + T(180)) / two_pi);
     };
+
+    class FileSystemHelper
+    {
+      public:
+
+        /******************************************************************************
+         * Recursively create directory if `path` not exists.
+         * Return 0 if success.
+         *****************************************************************************/
+        static int createDirectoryIfNotExists(const char *path)
+        {
+            struct stat info;
+            int statRC = stat(path, &info);
+            if( statRC != 0 )
+            {
+                if (errno == ENOENT)
+                {
+                    printf("%s not exists, trying to create it \n", path);
+                    if (! createDirectoryIfNotExists(dirname(strdupa(path))))
+                    {
+                        if (mkdir(path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != 0)
+                        {
+                            fprintf(stderr, "Failed to create folder %s \n", path);
+                            return 1;
+                        }
+                        else
+                            return 0;
+                    }
+                    else
+                        return 1;
+                } // directory not exists
+                if (errno == ENOTDIR)
+                {
+                    fprintf(stderr, "%s is not a directory path \n", path);
+                    return 1;
+                } // something in path prefix is not a dir
+                return 1;
+            }
+            return ( info.st_mode & S_IFDIR ) ? 0 : 1;
+        }
+    };
+
+
+
+
 };
