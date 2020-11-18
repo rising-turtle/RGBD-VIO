@@ -96,9 +96,9 @@ bool ProjectionDepthFactor::Evaluate(double const *const *parameters, double *re
         Eigen::Matrix3d Rj = Qj.toRotationMatrix();
         Eigen::Matrix3d ric = qic.toRotationMatrix();
         Eigen::Matrix<double, 3, 3> reduce(3, 3);
-        reduce << 1. / dep_j, 0, -pts_camera_j(0) / (dep_j * dep_j),
-             0, 1. / dep_j, -pts_camera_j(1) / (dep_j * dep_j),
-             0, 0, -1./(dep_j*dep_j); 
+         reduce << 1. / dep_j, 0, -pts_camera_j(0) / (dep_j * dep_j),
+            0, 1. / dep_j, -pts_camera_j(1) / (dep_j * dep_j),
+            0, 0, -1./(dep_j*dep_j); 
         // reduce << 1. / dep_j, 0, -pts_camera_j(0) / (dep_j * dep_j),
         //     0, 1. / dep_j, -pts_camera_j(1) / (dep_j * dep_j),
         //    0, 0, meas_dep_j/(dep_j*dep_j); 
