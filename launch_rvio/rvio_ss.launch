@@ -2,7 +2,7 @@
 
    <!--remember to change the variable FOCAL_LENGTH = 460 in parameters.h/-->
 
-  <arg name="config_file" default="$(find rgbd_vio)/config/new_struct_core.yaml"/> <!--new_struct_core struct_core_v2 -->
+  <arg name="config_file" default="$(find rgbd_vio)/config/struct_core_v2.yaml"/> <!--new_struct_core struct_core_v2 -->
   <!--arg name="vins_folder" default="$(find rgbd_vio)/result"/-->
 
   <node pkg="rgbd_vio" type="feature_tracker_rgbd_vio" name="feature_tracker" output="screen">

@@ -82,13 +82,13 @@ bool ProjectionDepthFactor::Evaluate(double const *const *parameters, double *re
     // residuals[0] = sqrt_info * residuals[0]; 
     Eigen::Map<Eigen::Vector3d> residual(residuals);
     residual.head<2>() = (pts_camera_j / dep_j).head<2>() - pts_j.head<2>();
-    residual(2) = (1./dep_j) - inv_depth_j;
+    // residual(2) = (1./dep_j) - inv_depth_j;
     
-    // residual(2) = 1 - meas_dep_j/dep_j; 
-    // Eigen::Matrix3d sqrt_info_tmp  = sqrt_info; 
-    // sqrt_info_tmp(2,2) = sqrt_info(2,2) * dep_j/meas_dep_j;  
-    residual = sqrt_info * residual; 
-    // residual = sqrt_info_tmp * residual; 
+    residual(2) = 1 - meas_dep_j/dep_j; 
+    Eigen::Matrix3d sqrt_info_tmp  = sqrt_info; 
+    sqrt_info_tmp(2,2) = sqrt_info(2,2) * dep_j/meas_dep_j;  
+    // residual = sqrt_info * residual; 
+    residual = sqrt_info_tmp * residual; 
 
     if(jacobians){
 
@@ -96,16 +96,15 @@ bool ProjectionDepthFactor::Evaluate(double const *const *parameters, double *re
         Eigen::Matrix3d Rj = Qj.toRotationMatrix();
         Eigen::Matrix3d ric = qic.toRotationMatrix();
         Eigen::Matrix<double, 3, 3> reduce(3, 3);
-         reduce << 1. / dep_j, 0, -pts_camera_j(0) / (dep_j * dep_j),
-            0, 1. / dep_j, -pts_camera_j(1) / (dep_j * dep_j),
-            0, 0, -1./(dep_j*dep_j); 
         // reduce << 1. / dep_j, 0, -pts_camera_j(0) / (dep_j * dep_j),
-        //     0, 1. / dep_j, -pts_camera_j(1) / (dep_j * dep_j),
-        //    0, 0, meas_dep_j/(dep_j*dep_j); 
+        //    0, 1. / dep_j, -pts_camera_j(1) / (dep_j * dep_j),
+        //    0, 0, -1./(dep_j*dep_j); 
+         reduce << 1. / dep_j, 0, -pts_camera_j(0) / (dep_j * dep_j),
+             0, 1. / dep_j, -pts_camera_j(1) / (dep_j * dep_j),
+            0, 0, meas_dep_j/(dep_j*dep_j); 
 
-        // double d_e_d_dep_j = -1./(dep_j*dep_j); 
-        reduce = sqrt_info * reduce;
-        // reduce = sqrt_info_tmp * reduce; 
+        // reduce = sqrt_info * reduce;
+        reduce = sqrt_info_tmp * reduce; 
 
         if(jacobians[0]){
             // d_e_d_pose_i
