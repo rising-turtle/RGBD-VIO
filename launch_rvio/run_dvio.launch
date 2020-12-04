@@ -1,0 +1,18 @@
+<launch>
+
+   <!--remember to change the variable FOCAL_LENGTH = 460 in parameters.h/-->
+
+  <arg name="config_file" default="$(find rgbd_vio)/config/struct_core_v2_dvio.yaml"/> <!--new_struct_core struct_core_v2 -->
+  <!--arg name="vins_folder" default="$(find rgbd_vio)/result"/-->
+
+  <node pkg="rgbd_vio" type="feature_tracker_rgbd_vio" name="feature_tracker" output="screen">
+    <param name="config_file" type="string" value="$(arg config_file)"/>
+  </node>
+
+  <node pkg="rgbd_vio" type="run_dvio_node" name="run_dvio_node" output="screen">
+    <param name="config_file" type="string" value="$(arg config_file)"/>
+  </node>
+
+  <node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d $(find rgbd_vio)/launch_rvio/dvio_demo.rviz"/>
+
+</launch>

@@ -479,12 +479,14 @@ bool FeatureManager::addFeatureCheckParallaxSigma_dvio(int frame_count, const ma
             if(zi > 0 && finish_ini){
                 
                 // This line below makes it different from VINS-Fusion in intialization 
-                if(it->estimated_depth <= 0 || (it->dpt_type != DEPTH_MES && it->estimated_depth > zi)){
+                // if(it->estimated_depth <= 0 || (it->dpt_type != DEPTH_MES && it->estimated_depth > zi)){
+                if(it->estimated_depth <= 0 || (it->estimated_depth > zi)){
                      if(lambda_i > 0 && sig_l > 0)
                         it->estimated_depth = 1./lambda_i;
                      else
                         it->estimated_depth = zi; //vp.s; 
                      it->depth_shift = it->feature_per_frame.size() -1; 
+                     it->dpt_type = DEPTH_MES; 
                 }
             }
 

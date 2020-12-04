@@ -98,7 +98,7 @@ PlaneFactor_P1::PlaneFactor_P1(const Eigen::Matrix<double,4,1>& plane_g, const E
 
     d_g = plane_g(3); 
     d_l = plane_l(3); 
-    sqrt_info = Eigen::Matrix3d::Identity() * 700.; 
+    sqrt_info = Eigen::Matrix3d::Identity(); // *2.4; // 24.; // 700.; 
 }
 
 bool PlaneFactor_P1::Evaluate(double const *const *parameters, double *residuals, double **jacobians) const
@@ -239,7 +239,7 @@ ProjectionFactor_Y2::ProjectionFactor_Y2(const Eigen::Vector3d &_pts_i, const Ei
 pts_i(_pts_i), pts_j(_pts_j)
 {
     sqrt_info = 1.; 
-    scale = 24; // 24; //24; // 10 
+    scale = 24. ; // 10 
 }
 
 bool ProjectionFactor_Y2::Evaluate(double const *const *parameters, double *residuals, double **jacobians) const 

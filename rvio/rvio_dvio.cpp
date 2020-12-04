@@ -17,8 +17,8 @@ using namespace Eigen;
  {
  	ROS_DEBUG("timestamp %lf with feature points %lu", header, image.size());
 
-    if(f_manager.addFeatureCheckParallaxSigma(frame_count, image))
-    // if(f_manager.addFeatureCheckParallaxSigma_dvio(frame_count, image, (solver_flag!=INITIAL)))
+    // if(f_manager.addFeatureCheckParallaxSigma(frame_count, image))
+    if(f_manager.addFeatureCheckParallaxSigma_dvio(frame_count, image, (solver_flag!=INITIAL)))
         marginalization_flag = MARGIN_OLD;
     else
         marginalization_flag = MARGIN_SECOND_NEW;
@@ -69,11 +69,14 @@ using namespace Eigen;
                 ROS_INFO("Initialization finish!");
                 showStatus();
 
-                f_manager.triangulateSimple(frame_count, Ps, Rs, tic, ric);
-                solveOdometry();
-                // solveMono(); 
-                // slideWindow_dvio(); 
-                slideWindow();
+                f_manager.triangulateWithDepth(Ps, tic, ric);
+                // f_manager.triangulate(Ps, Rs, tic, ric); 
+                // f_manager.triangulateSimple(frame_count, Ps, Rs, tic, ric);
+                // solveOdometry();
+                // solveMono();
+                solveOdometry_dvio();  
+                slideWindow_dvio(); 
+                // slideWindow();
                 f_manager.removeFailures(); 
                 last_R = Rs[WN]; 
                 last_P = Ps[WN]; 
@@ -88,7 +91,9 @@ using namespace Eigen;
             frame_count++; 
         }
     }else{
-        f_manager.triangulateSimple(frame_count, Ps, Rs, tic, ric);
+        // f_manager.triangulateSimple(frame_count, Ps, Rs, tic, ric);
+        f_manager.triangulateWithDepth(Ps, tic, ric);
+        // f_manager.triangulate(Ps, Rs, tic, ric); 
         // solveOdometry();
         // solveMono();
         solveOdometry_dvio(); 
@@ -259,6 +264,7 @@ void RVIO::solveOdometry_dvio()
 
     // add floor plane factor 
     for(int i=1; i<=frame_count; i++){
+    // for(int i=frame_count-2; i<=frame_count; i++){
         if(bPls[i]){
             cout<<"rvio_dvio.cpp: add plane factor "<<fp_Pls.transpose()<<" at pose i = "<<i<<" pl = "<<Pls[i].transpose()<<endl;
             PlaneFactor_P1 * plane_factor = new PlaneFactor_P1(fp_Pls, Pls[i]);
@@ -300,7 +306,7 @@ void RVIO::solveOdometry_dvio()
                 int imu_j = it_per_id.start_frame + shift; 
                 Vector3d pts_j = it_per_id.feature_per_frame[shift].pt;                
            		
-           		if(dpt_j <= 0 ){
+           		if(1 || dpt_j <= 0 ){ // do not consider the
                     // para_Feature[feature_index][0] = 1./it_per_id.estimated_depth; 
                     ProjectionFactor * f = new ProjectionFactor(pts_i, pts_j); 
                     // f->sqrt_info = 240 * Eigen::Matrix2d::Identity(); // 240
@@ -319,7 +325,7 @@ void RVIO::solveOdometry_dvio()
                 }           
                 f_m_cnt++;
             }
-            if(it_per_id.dpt_type == DEPTH_MES)
+            if(it_per_id.dpt_type == DEPTH_MES && it_per_id.estimated_depth < DPT_VALID_RANGE)
                 problem.SetParameterBlockConstant(para_Feature[feature_index]);   
 
         }else if(it_per_id.solve_flag != 2){ // feature unknown depths 
@@ -418,7 +424,7 @@ void RVIO::solveOdometry_dvio()
                     }
 
      
-                   if(dpt_j <= 0){
+                   if(1 || dpt_j <= 0){
                     // para_Feature[feature_index][0] = 1./it_per_id.estimated_depth; 
                     ProjectionFactor * f = new ProjectionFactor(pts_i, pts_j); 
 
@@ -459,23 +465,7 @@ void RVIO::solveOdometry_dvio()
             }
 
         }else if(it_per_id.solve_flag != 2){ // feature unknown depths 
-
-            if(it_per_id.start_frame != 0) 
-                continue; // no worry 
-            int imu_i = it_per_id.start_frame; 
-            Vector3d pts_i = it_per_id.feature_per_frame[0].pt; 
-
-            for(int shift = 1; shift < it_per_id.feature_per_frame.size(); shift++){
-
-                int imu_j = imu_i + shift; 
-                Vector3d pts_j = it_per_id.feature_per_frame[shift].pt; 
-
-                ProjectionFactor_Y2 * f= new ProjectionFactor_Y2(pts_i, pts_j); 
-                ResidualBlockInfo* residual_block_info = new ResidualBlockInfo(f, loss_function, 
-                                                        vector<double*>{para_Pose[imu_i], para_Pose[imu_j], para_Ex_Pose[0]},
-                                                        vector<int>{0});
-                marginalization_info->addResidualBlockInfo(residual_block_info);
-            }
+            // do nothing 
         }
 
         }

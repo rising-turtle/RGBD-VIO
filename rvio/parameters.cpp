@@ -23,6 +23,7 @@ int MIN_USED_NUM = 2; // 2
 int ESTIMATE_EXTRINSIC;
 std::string EX_CALIB_RESULT_PATH;
 std::string VINS_RESULT_PATH;
+std::string OUTPUT_FILE_NAME = "rgbd_vio.csv";
 int LOOP_CLOSURE = 0;
 int MIN_LOOP_NUM;
 std::string CAM_NAMES;
@@ -102,7 +103,7 @@ void readParameters(ros::NodeHandle &n)
     // VINS_RESULT_PATH = VINS_FOLDER_PATH + VINS_RESULT_PATH;
     // create folder if not exists
     Utility::FileSystemHelper::createDirectoryIfNotExists(VINS_RESULT_PATH.c_str());
-    VINS_RESULT_PATH = VINS_RESULT_PATH + "/rgbd_vio.csv";
+    VINS_RESULT_PATH = VINS_RESULT_PATH + "/" + OUTPUT_FILE_NAME;
     ROS_DEBUG("VINS_RESULT_PATH: %s", VINS_RESULT_PATH.c_str());
     std::ofstream foutC(VINS_RESULT_PATH, std::ios::out);
     foutC.close();
