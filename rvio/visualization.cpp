@@ -100,7 +100,24 @@ void pubPlaneCorrectedOdometry(tf::Transform pose, const std_msgs::Header &heade
     corrected_path.header = header;
     corrected_path.header.frame_id = "world";
     corrected_path.poses.push_back(pose_stamped);
+    ROS_INFO("publish pose: %f %f %f", g_pose.position.x, g_pose.position.y, g_pose.position.z);
     pub_corrected_path.publish(corrected_path);
+
+
+    // write result to file
+    ofstream foutC(VINS_CORRECT_RESULT_PATH, ios::app);
+    foutC.setf(ios::fixed, ios::floatfield);
+    foutC.precision(0);
+    foutC << header.stamp.toSec() * 1e9 << ",";
+    foutC.precision(5);
+    foutC << g_pose.position.x << ","
+          << g_pose.position.y << ","
+          << g_pose.position.z << ","
+          << g_pose.orientation.w << ","
+          << g_pose.orientation.x << ","
+          << g_pose.orientation.y << ","
+          << g_pose.orientation.z << endl;
+    foutC.close();
 }
 
 void pubOdometry(const RVIO &estimator, const std_msgs::Header &header)

@@ -42,6 +42,9 @@ extern std::string VINS_RESULT_PATH;
 extern std::string VINS_FOLDER_PATH;
 extern std::string OUTPUT_FILE_NAME;
 
+extern std::string VINS_CORRECT_RESULT_PATH;
+extern std::string OUTPUT_COR_FILE_NAME;
+
 extern int LOOP_CLOSURE;
 extern int MIN_LOOP_NUM;
 extern int IMAGE_ROW;

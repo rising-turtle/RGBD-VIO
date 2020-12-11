@@ -23,7 +23,9 @@ int MIN_USED_NUM = 2; // 2
 int ESTIMATE_EXTRINSIC;
 std::string EX_CALIB_RESULT_PATH;
 std::string VINS_RESULT_PATH;
+std::string VINS_CORRECT_RESULT_PATH; 
 std::string OUTPUT_FILE_NAME = "rgbd_vio.csv";
+std::string OUTPUT_COR_FILE_NAME = "corrected_pose.csv"; 
 int LOOP_CLOSURE = 0;
 int MIN_LOOP_NUM;
 std::string CAM_NAMES;
@@ -103,10 +105,14 @@ void readParameters(ros::NodeHandle &n)
     // VINS_RESULT_PATH = VINS_FOLDER_PATH + VINS_RESULT_PATH;
     // create folder if not exists
     Utility::FileSystemHelper::createDirectoryIfNotExists(VINS_RESULT_PATH.c_str());
+    VINS_CORRECT_RESULT_PATH = VINS_RESULT_PATH + "/" + OUTPUT_COR_FILE_NAME; 
     VINS_RESULT_PATH = VINS_RESULT_PATH + "/" + OUTPUT_FILE_NAME;
     ROS_DEBUG("VINS_RESULT_PATH: %s", VINS_RESULT_PATH.c_str());
     std::ofstream foutC(VINS_RESULT_PATH, std::ios::out);
     foutC.close();
+
+    std::ofstream foutC2(VINS_CORRECT_RESULT_PATH, std::ios::out);
+    foutC2.close();
 
     ACC_N = fsSettings["acc_n"];
     ACC_W = fsSettings["acc_w"];

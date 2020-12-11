@@ -178,8 +178,10 @@ bool RVIO::getFloorAndObstacle(const cv::Mat& dpt)
     	angle *= -1; 
     }
     const double COS30 = cos(30.*M_PI/180.);
+    const double COS10 = cos(10.*M_PI/180.);
     // cout<<"Floor plane has indices.size = "<<indices->indices.size()<<" points nv = "<<nv.transpose()<<endl;
-    if(indices->indices.size() < 100 || angle < COS30) // NO Floor plane is observed 
+    if(indices->indices.size() < 100 || angle < COS10) // NO Floor plane is observed 
+    // if(indices->indices.size() < 100 || angle < COS30) // NO Floor plane is observed 
     {
         mPCNoFloor->points.reserve(in_pc_w->points.size()); 
         for(int i=0; i<in_pc_w->points.size(); i++)

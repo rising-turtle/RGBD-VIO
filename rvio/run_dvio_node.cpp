@@ -314,6 +314,7 @@ int main(int argc, char **argv)
     ros::NodeHandle n("~");
     ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug); // Info
     OUTPUT_FILE_NAME = "run_dvio.csv";
+    OUTPUT_COR_FILE_NAME = "run_dvio_corrected.csv"; 
     readParameters(n);
     rvio.setParameter();
     ROS_WARN("waiting for image and imu...");

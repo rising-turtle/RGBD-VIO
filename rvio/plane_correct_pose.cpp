@@ -50,7 +50,7 @@ bool PlaneCorrectPose::correctPose(const RVIO& estimator)
 	currPose = estimator.mCurrIMUPose; 
 
 	tf::Transform inc_pose = prevPose.inverse() * currPose; 
-	tf::Transform currCorrPose = prevCorrPose * inc_pose; 
+	currCorrPose = prevCorrPose * inc_pose; 
 
 	if(estimator.bPls[estimator.frame_count] == false){ // no way to update it. 
 		// ROS_ERROR("what frame_count: %i and no floor plane is founded ", estimator.frame_count); 
@@ -70,20 +70,22 @@ bool PlaneCorrectPose::correctPose(const RVIO& estimator)
 	double dl_meas = local_plane(3); 
 	double residual = dl_meas - dl_pred; 
 
-	ROS_ERROR("plane_correct_pose.cpp: before correct, residual : %lf ", residual); 
-
 	// 
 	Eigen::Vector3d delta_pi = residual * nv_g; 
 	dl_pred = nv_g.dot(Pi) + nv_g.dot(delta_pi) + dg; 
-	residual = dl_meas - dl_pred; 
+	// residual = dl_meas - dl_pred; 
 
-	tf::Vector3 new_pi(Pi(0) + delta_pi(0), Pi(1) + delta_pi(1), Pi(2) + delta_pi(2)); 
-	currCorrPose.setOrigin(new_pi); 
+	if(delta_pi.norm() >= 0.15){
+		ROS_ERROR("plane_correct_pose.cpp: large residual : %lf  delta_pi: %f %f %f", residual, delta_pi(0), delta_pi(1), delta_pi(2)); 
+	}else{
+		tf::Vector3 new_pi(Pi(0) + delta_pi(0), Pi(1) + delta_pi(1), Pi(2) + delta_pi(2)); 
+		currCorrPose.setOrigin(new_pi); 
+	}
 
-	ROS_DEBUG("Pose_i: %f %f %f, corrected_Pose_i: %f %f %f", Pi(0), Pi(1), Pi(2), 
-			new_pi.getX(), new_pi.getY(), new_pi.getZ());
+	// ROS_DEBUG("Pose_i: %f %f %f, corrected_Pose_i: %f %f %f", Pi(0), Pi(1), Pi(2), 
+	//		new_pi.getX(), new_pi.getY(), new_pi.getZ());
 
-	ROS_WARN("plane_correct_pose.cpp: after correct, residual : %lf ", residual); 
+	// ROS_WARN("plane_correct_pose.cpp: after correct, residual : %lf ", residual); 
 
 	// update the pose 
 
