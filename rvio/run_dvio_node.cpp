@@ -18,11 +18,12 @@
 #include "rvio.h"
 #include "parameters.h"
 #include "visualization.h"
-
+#include "plane_correct_pose.h"
 
 #define R2D(r) ((r)*180./M_PI)
 
 RVIO rvio;
+PlaneCorrectPose planeCorrectPose; 
 
 std::condition_variable con;
 double current_time = -1;
@@ -297,6 +298,8 @@ void process()
                     pubFloorPoint(rvio, header); 
                 }
                 //  pubNonFloorPoint(rvio, header); 
+                planeCorrectPose.correctPose(rvio);
+                pubPlaneCorrectedOdometry(planeCorrectPose.getCurrPose(), header);
             }
             // pubKeyframe(estimator);
             //ROS_ERROR("end: %f, at %f", img_msg->header.stamp.toSec(), ros::Time::now().toSec());

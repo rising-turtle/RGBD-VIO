@@ -25,6 +25,7 @@
 // #include "CameraPoseVisualization.h"
 #include <eigen3/Eigen/Dense>
 #include "rvio.h"
+#include "tf/tf.h"
 #include "parameters.h"
 #include <fstream>
 
@@ -61,3 +62,5 @@ void pubTF(const RVIO &rvio, const std_msgs::Header &header);
 void pubFloorPoint(const RVIO &estimator, const std_msgs::Header &header);
 
 void pubNonFloorPoint(const RVIO &estimator, const std_msgs::Header &header);
+
+void pubPlaneCorrectedOdometry(tf::Transform pose, const std_msgs::Header &header);

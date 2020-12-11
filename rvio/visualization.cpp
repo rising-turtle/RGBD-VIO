@@ -13,12 +13,15 @@
 using namespace ros;
 using namespace Eigen;
 ros::Publisher pub_odometry, pub_latest_odometry;
-ros::Publisher pub_path;
+
 ros::Publisher pub_point_cloud, pub_margin_cloud;
 ros::Publisher pub_key_poses;
 ros::Publisher pub_camera_pose;
 ros::Publisher pub_camera_pose_visual;
 nav_msgs::Path path;
+nav_msgs::Path corrected_path; 
+ros::Publisher pub_path;
+ros::Publisher pub_corrected_path; 
 
 ros::Publisher pub_keyframe_pose;
 ros::Publisher pub_keyframe_point;
@@ -33,6 +36,7 @@ void registerPub(ros::NodeHandle &n)
 {
     pub_latest_odometry = n.advertise<nav_msgs::Odometry>("imu_propagate", 1000);
     pub_path = n.advertise<nav_msgs::Path>("path", 1000);
+    pub_corrected_path = n.advertise<nav_msgs::Path>("corrected_path", 1000);
     pub_odometry = n.advertise<nav_msgs::Odometry>("odometry", 1000);
     pub_point_cloud = n.advertise<sensor_msgs::PointCloud>("point_cloud", 1000);
     pub_margin_cloud = n.advertise<sensor_msgs::PointCloud>("margin_cloud", 1000);
@@ -75,6 +79,28 @@ void pubTrackImage(const cv::Mat &imgTrack, const double t)
     header.stamp = ros::Time(t);
     sensor_msgs::ImagePtr imgTrackMsg = cv_bridge::CvImage(header, "bgr8", imgTrack).toImageMsg();
     pub_image_track.publish(imgTrackMsg);
+}
+
+
+void pubPlaneCorrectedOdometry(tf::Transform pose, const std_msgs::Header &header)
+{
+    geometry_msgs::Pose g_pose; 
+    g_pose.position.x = pose.getOrigin().getX(); 
+    g_pose.position.y = pose.getOrigin().getY(); 
+    g_pose.position.z = pose.getOrigin().getZ(); 
+    g_pose.orientation.x = pose.getRotation().getX(); 
+    g_pose.orientation.y = pose.getRotation().getY(); 
+    g_pose.orientation.z = pose.getRotation().getZ(); 
+    g_pose.orientation.w = pose.getRotation().getW(); 
+
+    geometry_msgs::PoseStamped pose_stamped;
+    pose_stamped.header = header;
+    pose_stamped.header.frame_id = "world";
+    pose_stamped.pose = g_pose;
+    corrected_path.header = header;
+    corrected_path.header.frame_id = "world";
+    corrected_path.poses.push_back(pose_stamped);
+    pub_corrected_path.publish(corrected_path);
 }
 
 void pubOdometry(const RVIO &estimator, const std_msgs::Header &header)

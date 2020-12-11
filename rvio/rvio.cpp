@@ -463,7 +463,8 @@ void RVIO::slideWindow()
             Vs[WN] = Vs[WN-1];
             Bas[WN] = Bas[WN-1]; 
             Bgs[WN] = Bgs[WN-1];
-            bPls[WN] = false; 
+            bPls[WN] = bPls[WN-1]; 
+            Pls[WN] = Pls[WN-1];
 
             delete pre_integrations[WN]; 
             pre_integrations[WN] = new IntegrationBase{acc_0, gyr_0, Bas[WN], Bgs[WN]};
