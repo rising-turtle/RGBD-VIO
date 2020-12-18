@@ -75,7 +75,7 @@ bool PlaneCorrectPose::correctPose(const RVIO& estimator)
 	dl_pred = nv_g.dot(Pi) + nv_g.dot(delta_pi) + dg; 
 	// residual = dl_meas - dl_pred; 
 
-	if(delta_pi.norm() >= 0.15){
+	if(delta_pi.norm() >= 0.5){
 		ROS_ERROR("plane_correct_pose.cpp: large residual : %lf  delta_pi: %f %f %f", residual, delta_pi(0), delta_pi(1), delta_pi(2)); 
 	}else{
 		tf::Vector3 new_pi(Pi(0) + delta_pi(0), Pi(1) + delta_pi(1), Pi(2) + delta_pi(2)); 

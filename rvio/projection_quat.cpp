@@ -239,7 +239,7 @@ ProjectionFactor_Y2::ProjectionFactor_Y2(const Eigen::Vector3d &_pts_i, const Ei
 pts_i(_pts_i), pts_j(_pts_j)
 {
     sqrt_info = 1.; 
-    scale = 24. ; // 10 
+    scale = 2400. ; // 10 
 }
 
 bool ProjectionFactor_Y2::Evaluate(double const *const *parameters, double *residuals, double **jacobians) const 
@@ -336,6 +336,7 @@ bool ProjectionFactor_Y2::Evaluate(double const *const *parameters, double *resi
 	    
 	    jacobian_pose_i.leftCols<6>() = dy2_dpij * jacobian_pij_pi; 
 	    jacobian_pose_i.rightCols<1>().setZero(); 
+        // jacobian_pose_i.leftCols<3>().setZero();
 
 	    for(int j=0; j<6; j++)
 		jacobian_pose_i[j] *= scale; 
@@ -357,6 +358,7 @@ bool ProjectionFactor_Y2::Evaluate(double const *const *parameters, double *resi
 	    
 	    jacobian_pose_j.leftCols<6>() = dy2_dpij * jacobian_pij_pj; 
 	    jacobian_pose_j.rightCols<1>().setZero(); 
+        // jacobian_pose_j.leftCols<3>().setZero();
 	    for(int j=0; j<6; j++)
 		jacobian_pose_j[j] *= scale; 
 

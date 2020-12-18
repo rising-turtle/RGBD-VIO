@@ -257,6 +257,7 @@ void RVIO::solveOdometry_dvio()
 
     // add imu factor 
     for (int i = 0; i < frame_count; i++){
+    // for (int i = frame_count - 3; i < frame_count; i++){
         int j = i + 1;
         if (pre_integrations[j]->sum_dt > 10.0 )
             continue;
