@@ -48,7 +48,7 @@ using namespace std;
 
 class GMM_Model;
 
-const static int WN = 10; // 3 
+const static int WN = 10; // 4; // 10; // 3 
 const static int NOT_INITIED = -100000;
 
 enum SolverFlag

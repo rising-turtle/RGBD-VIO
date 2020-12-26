@@ -12,10 +12,10 @@ distortion_parameters:
     p2: 0.
 projection_parameters: 
     #  615.426, 625.456, 318.837, 240.594
-    fx: 308.653 # 309.235 # 617.306
-    fy: 308.857 # 309.381 # 617.714
-    cx: 215.122 # 213.547 # 326.245
-    cy: 119.987 # 118.772 # 239.974
+    fx: 309.235 # 617.306
+    fy: 309.381 # 617.714
+    cx: 213.547 # 326.245
+    cy: 118.772 # 239.974
 
 #### feature tracking #### 
 sub_region_x: 8 #12 8
@@ -45,7 +45,7 @@ cloud_max_depth: 3.
 
 #### max depth range ####
 max_depth_range: 2.4
-valid_depth_range: 2.4 # RMS about 20mm 
+valid_depth_range: 2.4 # 2.4 # RMS about 20mm 
 
 #### normal gravity ####
 norm_g: 1.
@@ -54,7 +54,7 @@ norm_g: 1.
 imu_topic: "/imu0"
 image_topic: "/cam0/color" # "/cam0/image_raw"
 dpt_img_topic: "/cam0/depth" # depth msg 
-output_path: "dvio_result.log"         # vins outputs will be wrttento vins_folder_path + output_path
+output_path: "/home/davidz/work/result"         # vins outputs will be wrttento vins_folder_path + output_path
 
 estimate_extrinsic: 0 
 ex_calib_result_path: "ex_calib_result.yaml"  # If you choose 1 or 2, the extrinsic calibration result will be written vins_folder_path + ex_calib_result_path.                        

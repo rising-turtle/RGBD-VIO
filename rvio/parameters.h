@@ -10,8 +10,8 @@
 
 #define SQ(x) ((x)*(x))
 
-const double FOCAL_LENGTH = 460.; //460.0; // 460.0; // when use downsampled input change it to 230
-const int WINDOW_SIZE = 10;
+const double FOCAL_LENGTH = 460; // 230.; // 460.; //460.0; // 460.0; // when use downsampled input change it to 230
+const int WINDOW_SIZE = 10; //  4; // 10;
 const int NUM_OF_CAM = 1; //2; // test stereo type representation 1;
 const int NUM_OF_FEAT = 1000;
 const double LOOP_INFO_VALUE = 50.0;
