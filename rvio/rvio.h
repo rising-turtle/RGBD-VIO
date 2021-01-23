@@ -90,6 +90,9 @@ public:
     // void associateDepth(map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>>& featureFrame, const cv::Mat& dpt);
     void associateDepthSimple(map<int, vector<pair<int, Eigen::Matrix<double, 10, 1>>>>& featureFrame, const cv::Mat& dpt);
     void associateDepthGMM(map<int, vector<pair<int, Eigen::Matrix<double, 10, 1>>>>& featureFrame, const cv::Mat& dpt);
+
+    void setInputDepthImage(const cv::Mat& dpt_img);
+    void associateDepthInterporlate(map<int, vector<pair<int, Eigen::Matrix<double, 10, 1>>>>& featureFrame, const cv::Mat& dpt);
   
     void getPoseInWorldFrame(int index, Eigen::Matrix4d &T);
     void getPoseInWorldFrame(Eigen::Matrix4d &T);
@@ -122,6 +125,9 @@ public:
     void slideWindowOld_dvio(); 
     void solveOdometry_dvio();
 
+    boost::shared_ptr<pcl::PointCloud<pcl::PointXYZI> > mDepthPC;
+    boost::shared_ptr<pcl::KdTreeFLANN<pcl::PointXYZI> > mKDTree; 
+
     double mFloorZ; 
     double mFloorRange; 
     boost::shared_ptr<pcl::PointCloud<pcl::PointXYZI> > mPCNoFloor;
@@ -141,7 +147,7 @@ public:
 
     volatile bool mbInited;  
     bool mbStereo; // whether use stereo camera or other cameras like RGB-D camera 
-    boost::shared_ptr<pcl::KdTreeFLANN<pcl::PointXYZI> > mKDTree; 
+    // boost::shared_ptr<pcl::KdTreeFLANN<pcl::PointXYZI> > mKDTree; 
     
     double mZoomDis; // must equal to that in depth_handler 
     vector<float>  mvDptCurr; 

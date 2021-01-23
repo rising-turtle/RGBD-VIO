@@ -35,8 +35,6 @@ namespace{
 }
 
 RVIO::RVIO():
-mKDTree(new pcl::KdTreeFLANN<pcl::PointXYZI>),
-mZoomDis(10.),
 mbFirstIMU(true),
 mbInited(false),
 frame_count(0),
@@ -46,6 +44,9 @@ m_imgCnt(0),
 mp_gmm(new GMM_Model),
 mPCNoFloor(new pcl::PointCloud<pcl::PointXYZI>),
 mPCFloor(new pcl::PointCloud<pcl::PointXYZ>),
+mDepthPC(new pcl::PointCloud<pcl::PointXYZI>),
+mZoomDis(10.),
+mKDTree(new pcl::KdTreeFLANN<pcl::PointXYZI>),
 mFloorZ(NOT_INITIED),
 mFloorRange(0.15),
 mbFirstFloorObserved(false)
@@ -179,6 +180,130 @@ void RVIO::associateDepthSimple(map<int, vector<pair<int, Eigen::Matrix<double, 
     }
     return ; 
 }
+
+void RVIO::setInputDepthImage(const cv::Mat& dpt_img)
+{   
+    // use input depth image to compute the current point cloud and kd tree 
+    // median filter to reduce noise 
+    cv::Mat dst; 
+    cv::medianBlur(dpt_img, dst, 3);  
+
+    // clear current point cloud 
+    boost::shared_ptr<pcl::PointCloud<pcl::PointXYZI> > tmpPC(new pcl::PointCloud<pcl::PointXYZI>()); 
+    // mPC->clear(); 
+    mDepthPC.swap(tmpPC);
+
+    // 2. compute point cloud 
+    pcl::PointXYZI pt;
+
+    // need FX, FY, CX, CY for depth image 
+    double DFX, DFY, DCX, DCY;  
+    for(int r = 0; r < dst.rows; r++)
+    for(int c = 0; c < dst.cols; c++){
+        float d = (float)dst.at<unsigned short>(r, c) * 0.001;
+        if(d >= 0.3 && d <= 5.0){//MAX_DPT_RANGE){
+            // valid depth value 
+            pt.x = (c - DCX)/FX * mZoomDis; 
+            pt.y = (r - DCY)/FY * mZoomDis; 
+            pt.z = mZoomDis; 
+            pt.intensity = d; 
+            mDepthPC->points.push_back(pt);
+        }
+    }
+    mDepthPC->height = 1;
+    mDepthPC->width = mDepthPC->points.size(); 
+
+    // 2. set kd search tree
+    mKDTree->setInputCloud(mDepthPC); 
+    return ; 
+}
+
+void RVIO::associateDepthInterporlate(map<int, vector<pair<int, Eigen::Matrix<double, 10, 1>>>>& featureFrame, const cv::Mat& dpt)
+{
+    // build kd search tree for the given input depth 
+    setInputDepthImage(dpt);     
+
+    // find out depth of the visual features 
+    pcl::PointXYZI query_pt; 
+
+    // x, y, z, p_u, p_v, velocity_x, velocity_y;
+    map<int, vector<pair<int, Eigen::Matrix<double, 10, 1>>>>::iterator it = featureFrame.begin(); 
+    while(it != featureFrame.end()){
+
+        float nor_ui = it->second[0].second(0); 
+        float nor_vi = it->second[0].second(1); 
+        float ui = it->second[0].second(3); // ui 
+        float vi = it->second[0].second(4); // vi
+
+        query_pt.x = mZoomDis * nor_ui; 
+        query_pt.y = mZoomDis * nor_vi; 
+        query_pt.z = mZoomDis; 
+        double query_pt_depth; 
+
+        if(mDepthPC->width >= 10){
+            // kd search 
+            std::vector<int> pointSearchInd;
+            std::vector<float> pointSearchSqrDis;
+
+            mKDTree->nearestKSearch(query_pt, 3, pointSearchInd, pointSearchSqrDis); 
+            double minDepth, maxDepth; 
+            if(pointSearchSqrDis[0] < 0.5 && pointSearchInd.size() == 3){
+
+                pcl::PointXYZI depthPoint = mDepthPC->points[pointSearchInd[0]];
+                double x1 = depthPoint.x * depthPoint.intensity / mZoomDis;
+                double y1 = depthPoint.y * depthPoint.intensity / mZoomDis;
+                double z1 = depthPoint.intensity;
+                minDepth = z1;
+                maxDepth = z1;
+
+                depthPoint = mDepthPC->points[pointSearchInd[1]];
+                double x2 = depthPoint.x * depthPoint.intensity / mZoomDis;
+                double y2 = depthPoint.y * depthPoint.intensity / mZoomDis;
+                double z2 = depthPoint.intensity;
+                minDepth = (z2 < minDepth)? z2 : minDepth;
+                maxDepth = (z2 > maxDepth)? z2 : maxDepth;
+
+                depthPoint = mDepthPC->points[pointSearchInd[2]];
+                double x3 = depthPoint.x * depthPoint.intensity / mZoomDis;
+                double y3 = depthPoint.y * depthPoint.intensity / mZoomDis;
+                double z3 = depthPoint.intensity;
+                minDepth = (z3 < minDepth)? z3 : minDepth;
+                maxDepth = (z3 > maxDepth)? z3 : maxDepth;
+
+                double u = nor_ui;
+                double v = nor_vi;
+
+                // intersection point between direction of OP and the Plane formed by [P1, P2, P3]
+                query_pt_depth = (x1*y2*z3 - x1*y3*z2 - x2*y1*z3 + x2*y3*z1 + x3*y1*z2 - x3*y2*z1) 
+                / (x1*y2 - x2*y1 - x1*y3 + x3*y1 + x2*y3 - x3*y2 + u*y1*z2 - u*y2*z1
+                    - v*x1*z2 + v*x2*z1 - u*y1*z3 + u*y3*z1 + v*x1*z3 - v*x3*z1 + u*y2*z3 
+                    - u*y3*z2 - v*x2*z3 + v*x3*z2);
+
+                // check the validity of the depth measurement 
+                if(maxDepth - minDepth > 2) // lie on an edge or noisy point? 
+                {   
+                    query_pt_depth = 0; 
+                }else if(query_pt_depth - maxDepth > 0.2)
+                {
+                    query_pt_depth = maxDepth; 
+                }else if(query_pt_depth - minDepth < - 0.2)
+                {
+                    query_pt_depth = minDepth; 
+                }
+            }else{
+                query_pt_depth = 0; 
+            }
+        }else{
+            query_pt_depth = 0; 
+        }
+
+        it->second[0].second(2) = query_pt_depth; 
+        it++;
+    }
+
+    return ; 
+}
+
 
 void RVIO::initFirstIMUPose(vector<pair<double, Eigen::Vector3d>> &accVector)
 {
