@@ -268,6 +268,7 @@ void process()
                     // ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::MONO16);
                     cv_bridge::CvImageConstPtr ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::MONO16);
                     rvio.associateDepthSimple(image, ptr->image); 
+                    // rvio.associateDepthInterporlate(image, ptr->image); 
                     // if(rvio.solver_flag != INITIAL)
                        //  do not need to explore floor plane 
                        // b_get_floor = rvio.getFloorAndObstacle(ptr->image); 
@@ -276,6 +277,7 @@ void process()
                 }else{
                     cv_bridge::CvImageConstPtr ptr = cv_bridge::toCvCopy(dpt_ptr, sensor_msgs::image_encodings::MONO16);
                     rvio.associateDepthSimple(image, ptr->image); 
+                    // rvio.associateDepthInterporlate(image, ptr->image); 
                     // if(rvio.solver_flag != INITIAL)
                         //  do not need to explore floor plane 
                         // b_get_floor = rvio.getFloorAndObstacle(ptr->image); 
@@ -283,8 +285,8 @@ void process()
                 }
             }
 
-            // rvio.processImage_Init(image, img_msg->header.stamp.toSec());
-            rvio.processImage_Init_dvio(image, img_msg->header.stamp.toSec());
+            rvio.processImage_Init(image, img_msg->header.stamp.toSec());
+            // rvio.processImage_Init_dvio(image, img_msg->header.stamp.toSec());
 
             double whole_t = t_s.toc();
             // printStatistics(estimator, whole_t);

@@ -40,6 +40,12 @@ std::string VINS_FOLDER_PATH;
 int MAX_KEYFRAME_NUM;
 double PIX_SIGMA, FX, FY, CX, CY;
 
+// TODO: parameterize these from config, if necessary 
+double DFX = 212.7505; 
+double DFY = 212.7505;
+double DCX = 126.4288; 
+double DCY = 95.6402; 
+
 int MAX_CNT;
 int MIN_DIST;
 double F_THRESHOLD;

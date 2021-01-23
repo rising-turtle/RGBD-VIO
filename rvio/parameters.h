@@ -10,7 +10,7 @@
 
 #define SQ(x) ((x)*(x))
 
-const double FOCAL_LENGTH = 460; // 230.; // 460.; //460.0; // 460.0; // when use downsampled input change it to 230
+const double FOCAL_LENGTH = 460; // 460; //1200 // 230.; // 460.; //460.0; // 460.0; // when use downsampled input change it to 230
 const int WINDOW_SIZE = 10; //  4; // 10;
 const int NUM_OF_CAM = 1; //2; // test stereo type representation 1;
 const int NUM_OF_FEAT = 1000;
@@ -50,6 +50,7 @@ extern int MIN_LOOP_NUM;
 extern int IMAGE_ROW;
 extern int IMAGE_COL;
 extern double CX, CY, FX, FY;
+extern double DCX, DCY, DFX, DFY; // intrinsic of depth camera 
 extern std::string PATTERN_FILE;
 extern std::string VOC_FILE;
 extern std::string CAM_NAMES;

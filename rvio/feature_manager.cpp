@@ -717,9 +717,9 @@ bool FeatureManager::addFeatureCheckParallax(int frame_count, const map<int, vec
             if(zi > 0){
 
                 // This line below makes it different from VINS-Fusion in intialization 
-                if(it->estimated_depth <= 0 || (it->dpt_type != DEPTH_MES && it->estimated_depth > zi)){
+                // if(it->estimated_depth <= 0 || (it->dpt_type != DEPTH_MES && it->estimated_depth > zi)){
                 // if(it->estimated_depth <= 0 || (it->estimated_depth > zi)){
-                // if(it->estimated_depth < 0 ){
+                if(it->estimated_depth <= 0 ){
                      it->estimated_depth = zi; //vp.s; 
                      it->depth_shift = it->feature_per_frame.size() -1; 
                 }

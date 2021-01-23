@@ -53,6 +53,7 @@ double last_imu_t = 0;
 
 // double nG = 1.0; //  -9.8; 
 
+bool DEPTH_INTERPOLATE = false; 
 
 sensor_msgs::Image::ConstPtr getDptImage(double timestamp)
 {
@@ -267,13 +268,19 @@ void process()
                     img.encoding = "mono16";
                     // ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::MONO16);
                     cv_bridge::CvImageConstPtr ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::MONO16);
-                    rvio.associateDepthSimple(image, ptr->image); 
+                    if(DEPTH_INTERPOLATE)
+                        rvio.associateDepthInterporlate(image, ptr->image); 
+                    else
+                        rvio.associateDepthSimple(image, ptr->image);     
                     // if(rvio.solver_flag != INITIAL)
                     //    b_get_floor = rvio.getFloorAndObstacle(ptr->image); 
                     // rvio.associateDepthGMM(image, ptr->image); 
                 }else{
                     cv_bridge::CvImageConstPtr ptr = cv_bridge::toCvCopy(dpt_ptr, sensor_msgs::image_encodings::MONO16);
-                    rvio.associateDepthSimple(image, ptr->image); 
+                    if(DEPTH_INTERPOLATE)
+                        rvio.associateDepthInterporlate(image, ptr->image); 
+                    else
+                        rvio.associateDepthSimple(image, ptr->image);     
                     // if(rvio.solver_flag != INITIAL)
                     //    b_get_floor = rvio.getFloorAndObstacle(ptr->image); 
                     // rvio.associateDepthGMM(image, ptr->image); 
@@ -315,6 +322,7 @@ int main(int argc, char **argv)
     ROS_WARN("waiting for image and imu...");
 
     registerPub(n);
+    n.param("depth_interpolate", DEPTH_INTERPOLATE, DEPTH_INTERPOLATE);
 
     ros::Subscriber sub_imu = n.subscribe(IMU_TOPIC, 2000, imu_callback, ros::TransportHints().tcpNoDelay());
     ros::Subscriber sub_image = n.subscribe("/feature_tracker/feature", 2000, feature_callback);

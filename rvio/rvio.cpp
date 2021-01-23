@@ -197,14 +197,13 @@ void RVIO::setInputDepthImage(const cv::Mat& dpt_img)
     pcl::PointXYZI pt;
 
     // need FX, FY, CX, CY for depth image 
-    double DFX, DFY, DCX, DCY;  
     for(int r = 0; r < dst.rows; r++)
     for(int c = 0; c < dst.cols; c++){
         float d = (float)dst.at<unsigned short>(r, c) * 0.001;
         if(d >= 0.3 && d <= 5.0){//MAX_DPT_RANGE){
             // valid depth value 
-            pt.x = (c - DCX)/FX * mZoomDis; 
-            pt.y = (r - DCY)/FY * mZoomDis; 
+            pt.x = (c - DCX)/DFX * mZoomDis; 
+            pt.y = (r - DCY)/DFY * mZoomDis; 
             pt.z = mZoomDis; 
             pt.intensity = d; 
             mDepthPC->points.push_back(pt);
@@ -274,10 +273,23 @@ void RVIO::associateDepthInterporlate(map<int, vector<pair<int, Eigen::Matrix<do
                 double v = nor_vi;
 
                 // intersection point between direction of OP and the Plane formed by [P1, P2, P3]
-                query_pt_depth = (x1*y2*z3 - x1*y3*z2 - x2*y1*z3 + x2*y3*z1 + x3*y1*z2 - x3*y2*z1) 
-                / (x1*y2 - x2*y1 - x1*y3 + x3*y1 + x2*y3 - x3*y2 + u*y1*z2 - u*y2*z1
+                // query_pt_depth = (x1*y2*z3 - x1*y3*z2 - x2*y1*z3 + x2*y3*z1 + x3*y1*z2 - x3*y2*z1) 
+                // / (x1*y2 - x2*y1 - x1*y3 + x3*y1 + x2*y3 - x3*y2 + u*y1*z2 - u*y2*z1
+                //     - v*x1*z2 + v*x2*z1 - u*y1*z3 + u*y3*z1 + v*x1*z3 - v*x3*z1 + u*y2*z3 
+                //     - u*y3*z2 - v*x2*z3 + v*x3*z2);
+
+                double up = (x1*y2*z3 - x1*y3*z2 - x2*y1*z3 + x2*y3*z1 + x3*y1*z2 - x3*y2*z1) ; 
+                double down = (x1*y2 - x2*y1 - x1*y3 + x3*y1 + x2*y3 - x3*y2 + u*y1*z2 - u*y2*z1
                     - v*x1*z2 + v*x2*z1 - u*y1*z3 + u*y3*z1 + v*x1*z3 - v*x3*z1 + u*y2*z3 
-                    - u*y3*z2 - v*x2*z3 + v*x3*z2);
+                    - u*y3*z2 - v*x2*z3 + v*x3*z2); 
+
+                if(down <= 1e-5){
+                    query_pt_depth = 0;
+                    if(z1 == z2 == z3)
+                        query_pt_depth = z1; 
+                }
+                else
+                    query_pt_depth = up/down; 
 
                 // check the validity of the depth measurement 
                 if(maxDepth - minDepth > 2) // lie on an edge or noisy point? 
@@ -290,12 +302,25 @@ void RVIO::associateDepthInterporlate(map<int, vector<pair<int, Eigen::Matrix<do
                 {
                     query_pt_depth = minDepth; 
                 }
+
+                // if((query_pt_depth < 0.3 || query_pt_depth > 5)){
+                    // ROS_WARN("what? query_pt_depth: %lf minDepth: %lf maxDepth: %lf", query_pt_depth, minDepth, maxDepth);
+                // }
+
+                if(query_pt_depth != query_pt_depth){
+                    ROS_ERROR("what? query_pt_depth is NaN, x1: %f y1: %f z1: %f x2: %f y2: %f z2: %f x3: %f y3: %f z3: %f u: %f v:%f",
+                             x1, y1, z1, x2, y2, z2, x3, y3, z3, u, v);
+                    ROS_WARN("up: %lf down: %lf", up, down);
+                }
+
             }else{
                 query_pt_depth = 0; 
             }
         }else{
             query_pt_depth = 0; 
         }
+
+      
 
         it->second[0].second(2) = query_pt_depth; 
         it++;
@@ -1294,7 +1319,7 @@ void RVIO::solveOdometry()
                         // if(dpt_j <= 2.2){
                         //     problem.SetParameterBlockConstant(para_Feature[feature_index]); 
                         //}else{
-                        {  // add single depth constraint 
+                        if(0){  // add single depth constraint 
                             SingleInvDepthFactor* fs = new SingleInvDepthFactor(1./dpt_j); 
                             if(it_per_id.feature_per_frame[shift].lambda > 0 && it_per_id.feature_per_frame[shift].sig_l > 0)
                                 fs->setSigma(it_per_id.feature_per_frame[shift].sig_l);
@@ -1328,7 +1353,20 @@ void RVIO::solveOdometry()
                         C(2,2) = it_per_id.feature_per_frame[shift].sig_l; 
                         f->setSqrtCov(C);
                     }
-                    problem.AddResidualBlock(f, loss_function, para_Pose[imu_i], para_Pose[imu_j], para_Ex_Pose[0], para_Feature[feature_index]);
+                    ceres::ResidualBlockId fid = problem.AddResidualBlock(f, loss_function, para_Pose[imu_i], para_Pose[imu_j], para_Ex_Pose[0], para_Feature[feature_index]);
+                    /*if(1){
+                        // static ofstream ouf("rgbd_vio_debug.txt"); 
+                        vector<double*>* para = new vector<double*>;  
+                        problem.GetParameterBlocksForResidualBlock(fid, para); 
+                        vector<double> res(3); 
+                        f->Evaluate(&para[0][0], &res[0], 0);
+                        if(res[0] != res[0]) {
+                            ROS_ERROR("residual is NaN ");
+                            cout << pts_i.transpose()<<" "<<pts_j.transpose()<<" "<<para_Feature[feature_index][0]<<" "<< res[0]<<" "<<res[1]<<endl;
+                        }
+                        // cout<<"estimator.cpp: residual: "<<res[0]<<" "<<res[1]<<endl;
+                        // ouf << f_m_cnt<<" "<<pts_i.transpose()<<" "<<pts_j.transpose()<<" "<<para_Feature[feature_index][0]<<" "<< res[0]<<" "<<res[1]<<endl;
+                    }*/
                 }
                 f_m_cnt++;
             }
