@@ -18,6 +18,9 @@ queue<sensor_msgs::ImageConstPtr> img_buf;
 ros::Publisher pub_img,pub_match;
 ros::Publisher pub_restart;
 
+bool PUB_IMAGE = false; 
+ros::Publisher pub_color_img;  
+
 FeatureTracker trackerData[NUM_OF_CAM];
 double first_image_time;
 int pub_count = 1;
@@ -77,7 +80,7 @@ void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
         img.data = img_msg->data;
         img.encoding = "mono8";
         ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::MONO8);
-	ret_img = ptr->image; 
+	ret_img = ptr->image.clone(); 
     }else if(img_msg->encoding == "8UC3"){
 	sensor_msgs::Image img;
 	img.header = img_msg->header;
@@ -92,7 +95,7 @@ void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
 	cv::cvtColor(ret_img, ret_img, cv::COLOR_BGR2GRAY);
     }else{
         ptr = cv_bridge::toCvCopy(img_msg, sensor_msgs::image_encodings::MONO8);
-	ret_img = ptr->image; 
+	ret_img = ptr->image.clone(); 
     }
     cv::Mat show_img = ret_img; // ptr->image;
     TicToc t_r;
@@ -177,6 +180,21 @@ void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
         else
             pub_img.publish(feature_points);
 
+        // publish the 
+        if(PUB_IMAGE){
+            // sensor_msgs::Image img;
+            // img.header = img_msg->header;
+            // img.height = img_msg->height;
+            // img.width = img_msg->width;
+            // img.is_bigendian = img_msg->is_bigendian;
+            // img.step = img_msg->step;
+            // img.data = show_img.data;
+            // img.encoding = "mono8";
+            // pub_color_img.publish(img); 
+            pub_color_img.publish(img_msg); 
+        }
+
+
         if (SHOW_TRACK)
         {
             ptr = cv_bridge::cvtColor(ptr, sensor_msgs::image_encodings::BGR8);
@@ -198,6 +216,7 @@ void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
             //cv::waitKey(5);
             pub_match.publish(ptr->toImageMsg());
         }
+        
     }
     // ROS_INFO("whole feature tracker processing costs: %f", t_r.toc());
 }
@@ -217,6 +236,11 @@ int main(int argc, char **argv)
     pub_img = n.advertise<sensor_msgs::PointCloud>("feature", 1000);
     pub_match = n.advertise<sensor_msgs::Image>("feature_img",1000);
     pub_restart = n.advertise<std_msgs::Bool>("restart",1000);
+
+    n.param("publish_keyframe_color_image", PUB_IMAGE, PUB_IMAGE); 
+
+    if(PUB_IMAGE)
+        pub_color_img = n.advertise<sensor_msgs::Image>("/keyframe_color_image", 1000); 
     /*
     if (SHOW_TRACK)
         cv::namedWindow("vis", cv::WINDOW_NORMAL);

@@ -39,6 +39,9 @@ std::mutex m_estimator;
 std::mutex m_dpt_buf; // depth 
 queue<sensor_msgs::Image::ConstPtr> dpt_img_buf;
 
+ bool PUB_DEPTH_IMAGE = false; 
+ ros::Publisher pub_depth_img; 
+
 double latest_time;
 Eigen::Vector3d tmp_P;
 Eigen::Quaterniond tmp_Q;
@@ -266,6 +269,15 @@ void process()
                     img.step = dpt_ptr->step;
                     img.data = dpt_ptr->data;
                     img.encoding = "mono16";
+
+                    if(PUB_DEPTH_IMAGE){
+                        // pub_depth_img.publish(img); 
+                        if(rvio.solver_flag == SolverFlag::NON_LINEAR){ // only publish depth after initialization{ 
+                            pub_depth_img.publish(dpt_ptr); 
+                            // ROS_WARN("rvio_syn_node: publish keyframe_depth_image at %lf", dpt_ptr->header.stamp.toSec());
+                        }
+                    }
+
                     // ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::MONO16);
                     cv_bridge::CvImageConstPtr ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::MONO16);
                     if(DEPTH_INTERPOLATE)
@@ -323,7 +335,10 @@ int main(int argc, char **argv)
 
     registerPub(n);
     n.param("depth_interpolate", DEPTH_INTERPOLATE, DEPTH_INTERPOLATE);
+    n.param("publish_keyframe_depth_image", PUB_DEPTH_IMAGE, PUB_DEPTH_IMAGE); 
 
+    if(PUB_DEPTH_IMAGE)
+        pub_depth_img = n.advertise<sensor_msgs::Image>("/keyframe_depth_image", 2000); 
     ros::Subscriber sub_imu = n.subscribe(IMU_TOPIC, 2000, imu_callback, ros::TransportHints().tcpNoDelay());
     ros::Subscriber sub_image = n.subscribe("/feature_tracker/feature", 2000, feature_callback);
     ros::Subscriber sub_dpt = n.subscribe(DPT_IMG_TOPIC, 2000, dpt_callback); 
