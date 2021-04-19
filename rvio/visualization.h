@@ -37,6 +37,7 @@ extern ros::Publisher pub_ref_pose, pub_cur_pose;
 extern ros::Publisher pub_key;
 extern nav_msgs::Path path;
 extern ros::Publisher pub_pose_graph;
+extern ros::Publisher pub_camera_pose;
 extern int IMAGE_ROW, IMAGE_COL;
 
 void registerPub(ros::NodeHandle &n);
@@ -48,6 +49,8 @@ void pubTrackImage(const cv::Mat &imgTrack, const double t);
 // void printStatistics(const RVIO &RVIO, double t);
 
 void pubOdometry(const RVIO &rvio, const std_msgs::Header &header);
+
+void pubCameraPose(const RVIO &estimator, const std_msgs::Header &header);
 
 void pubKeyPoses(const RVIO &rvio, const std_msgs::Header &header);
 

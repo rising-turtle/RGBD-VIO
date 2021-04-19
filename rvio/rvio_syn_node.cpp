@@ -308,7 +308,7 @@ void process()
 
             pubOdometry(rvio, header);
             // pubKeyPoses(estimator, header);
-            // pubCameraPose(estimator, header);
+            pubCameraPose(rvio, header);
             pubPointCloud(rvio, header);
             pubTF(rvio, header);
             if(rvio.solver_flag != INITIAL){
