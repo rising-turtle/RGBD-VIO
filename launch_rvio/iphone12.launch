@@ -7,6 +7,7 @@
 
      <node pkg="rgbd_vio" type="rgbd_vio_node" name="rvio_node" output="screen">
        <param name="config_file" type="string" value="$(arg config_file)"/>
+       <param name="depth_interpolate" type="bool" value="true"/>
        <!--param name="vins_folder" type="string" value="$(arg vins_folder)"/-->
      </node>
 
