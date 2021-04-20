@@ -21,7 +21,7 @@ target_link_libraries(run_dvio_node rgbd_vio ${CERES_LIBRARIES} ${catkin_LIBRARI
 add_executable(feature_tracker_rgbd_vio feature_tracker/feature_tracker.cpp feature_tracker/feature_tracker_node.cpp parameters.cpp)
 target_link_libraries(feature_tracker_rgbd_vio ${CERES_LIBRARIES} ${catkin_LIBRARIES} ${OpenCV_LIBS})
 
-add_executable(show_feat_result feature_tracker/show_feat_result.cpp)
-target_link_libraries(show_feat_result ${catkin_LIBRARIES} ${OpenCV_LIBS})
+# add_executable(show_feat_result feature_tracker/show_feat_result.cpp)
+# target_link_libraries(show_feat_result ${catkin_LIBRARIES} ${OpenCV_LIBS})
 
 

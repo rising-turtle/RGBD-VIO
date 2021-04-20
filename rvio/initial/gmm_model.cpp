@@ -8,6 +8,7 @@
 #include "gmm_model.h"
 #include "../utility/utility.h"
 #include <cmath>
+#include <numeric>
 
 using namespace cv;
 
