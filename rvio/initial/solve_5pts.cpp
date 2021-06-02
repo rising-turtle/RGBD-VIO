@@ -290,7 +290,7 @@ bool MotionEstimator::solveRelativeHybrid(const vector<pair<Vector3d, Vector3d>>
         cv::Mat cameraMatrix = (cv::Mat_<double>(3, 3) << 1, 0, 0, 0, 1, 0, 0, 0, 1);
         cv::Mat rot, trans;
         int inlier_cnt = cv::recoverPose(E, ll, rr, cameraMatrix, rot, trans, mask);
-        cout << "solve_5pts.cpp: in solveRelativeRT(): inlier_cnt " << inlier_cnt << endl;
+        cout << "solve_5pts.cpp: in solveRelativeHybrid(): inlier_cnt " << inlier_cnt << endl;
 
         Eigen::Matrix3d R;
         Eigen::Vector3d T;
@@ -313,13 +313,20 @@ bool MotionEstimator::solveRelativeHybrid(const vector<pair<Vector3d, Vector3d>>
         if(inlier_cnt > 12 && inliers.size() >= 5){
 
             // optimization to solve R, T // R is Rji, T is tji
+            // for(int i=0; i<inliers.size(); i++){
+            //     cout<<"i: "<<i<<" "<<inliers[i].first.transpose()<<" "<<inliers[i].second.transpose()<<endl; 
+            // }
+
+            // cout<<"R: "<<endl<<R<<endl; 
             sopt.solveHybrid(inliers, R, T, pcov); 
 
             Rotation = R.transpose(); // Rotation is Rij
             Translation = -R.transpose() * T; // Translation is tij 
 
             ROS_WARN("---------------5points----------------");
-            ROS_WARN("input points %d 2D inliers 3D inliers %d", ll.size(), inlier_cnt, inliers.size()); 
+            ROS_WARN("input points %d 2D inliers %d 3D inliers %d", ll.size(), inlier_cnt, inliers.size()); 
+            // cout<<"Rotation: "<<endl<<Rotation<<endl; 
+            // cout<<"Translation: "<<Translation.transpose()<<endl; 
 
             return true;
         }

@@ -17,6 +17,7 @@ bool OptSolver::solveHybrid(const vector<pair<Vector3d, Vector3d>> &corres, Matr
 	// first solve for initial translation 
 	solveTCeres(corres, Rji, tji, pcov); 
 	
+	// cout<<"tji: "<<tji.transpose()<<endl;
 	// TODO:  remove outliers? 
 
 	// optimization the result 
